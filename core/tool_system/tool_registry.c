@@ -4,6 +4,7 @@
  */
 #include "tool_registry.h"
 #include "context_manager.h"
+#include "../device/device_info.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -69,6 +70,22 @@ int MCP_ToolRegistryInit(int maxTools) {
                                    "}";
 
     MCP_ToolRegister("system.defineTool", MCP_ToolRegisterDynamic, defineToolSchema);
+    
+    // Initialize device info system
+    MCP_DeviceInfoInit();
+    
+    // Register system.getDeviceInfo tool
+    const char* deviceInfoSchema = "{"
+                                   "\"name\":\"system.getDeviceInfo\","
+                                   "\"description\":\"Get comprehensive device information\","
+                                   "\"params\":{"
+                                   "\"properties\":{"
+                                   "\"format\":{\"type\":\"string\",\"enum\":[\"full\",\"compact\"]}"
+                                   "}"
+                                   "}"
+                                   "}";
+                                   
+    MCP_ToolRegister("system.getDeviceInfo", MCP_DeviceInfoToolHandler, deviceInfoSchema);
 
     // Load all dynamic tools from persistent storage
     MCP_ToolLoadAllDynamic();
