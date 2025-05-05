@@ -1,0 +1,97 @@
+Start testing: May 06 00:09 KST
+----------------------------------------------------------
+1/3 Testing: DeviceInfoTest
+1/3 Test: DeviceInfoTest
+Command: "/Users/jsha/Desktop/Works/workspace/mcp/mcp_example/autostudio-embedded/build/test_device_info"
+Directory: /Users/jsha/Desktop/Works/workspace/mcp/mcp_example/autostudio-embedded/build
+"DeviceInfoTest" start time: May 06 00:09 KST
+Output:
+----------------------------------------------------------
+=== Device Information System Test ===
+
+Device Name: MCP Embedded Device
+Firmware Version: 1.0.0
+Platform: Generic
+
+Processor: Generic CPU
+Clock Speed: 100 MHz
+Core Count: 1
+Bit Width: 32
+
+Total RAM: 0 KB
+Free RAM: 0 KB
+Total Flash: 0 KB
+
+Device Info JSON:
+{"system":{"deviceName":"MCP Embedded Device","firmwareVersion":"1.0.0","buildDate":"May  6 2025","buildTime":"00:06:21","platformName":"Generic","boardModel":"Generic Board","uptime":0,"resetCount":1,"lastResetReason":"Power-on","isDebugMode":false},"processor":{"model":"Generic CPU","clockSpeedMHz":100,"coreCount":1,"bitWidth":32,"temperatureC":null,"loadPercent":null},"memory":{"totalRamKB":256,"freeRamKB":128,"usedRamKB":128,"totalFlashKB":1024,"freeFlashKB":512,"stackSizeKB":8,"heapSizeKB":128},"ioPorts":[{"name":"D0","type":"digital","isInput":true,"isOutput":true,"capabilities":{"pullUp":true,"pullDown":true,"analog":false,"pwm":false,"i2c":false,"spi":false,"uart":true,"interrupt":false},"state":{"digital":true},"isReserved":true},{"name":"A0","type":"analog","isInput":true,"isOutput":false,"capabilities":{"pullUp":false,"pullDown":false,"analog":true,"pwm":false,"i2c":false,"spi":false,"uart":false,"interrupt":false},"state":{"analog":256},"isReserved":false}],"networkInterfaces":[{"name":"WiFi","macAddress":"00:11:22:33:44:55","ipAddress":"192.168.1.100","isConnected":true,"type":{"wifi":true,"ethernet":false,"bluetooth":false},"signalStrength":75}],"sensors":[{"name":"Internal Temperature","type":"temperature","units":"°C","range":{"min":-40.00,"max":85.00},"currentValue":23.50,"isConnected":true,"bus":{"type":"i2c","address":72}}],"storageDevices":[{"name":"Internal Flash","type":"flash","totalSizeKB":1024,"freeSpaceKB":512,"isWriteProtected":false,"isRemovable":false,"isPresent":true}]}
+
+Testing device info tool handler...
+Tool handler succeeded, result:
+{"system":{"deviceName":"MCP Embedded Device","firmwareVersion":"1.0.0","buildDate":"May  6 2025","buildTime":"00:06:21","platformName":"Generic","boardModel":"Generic Board","uptime":0,"resetCount":1,"lastResetReason":"Power-on","isDebugMode":false},"processor":{"model":"Generic CPU","clockSpeedMHz":100,"coreCount":1,"bitWidth":32,"temperatureC":null,"loadPercent":null},"memory":{"totalRamKB":256,"freeRamKB":128,"usedRamKB":128,"totalFlashKB":1024,"freeFlashKB":512,"stackSizeKB":8,"heapSizeKB":128},"ioPorts":[{"name":"D0","type":"digital","isInput":true,"isOutput":true,"capabilities":{"pullUp":true,"pullDown":true,"analog":false,"pwm":false,"i2c":false,"spi":false,"uart":true,"interrupt":false},"state":{"digital":true},"isReserved":true},{"name":"A0","type":"analog","isInput":true,"isOutput":false,"capabilities":{"pullUp":false,"pullDown":false,"analog":true,"pwm":false,"i2c":false,"spi":false,"uart":false,"interrupt":false},"state":{"analog":256},"isReserved":false}],"networkInterfaces":[{"name":"WiFi","macAddress":"00:11:22:33:44:55","ipAddress":"192.168.1.100","isConnected":true,"type":{"wifi":true,"ethernet":false,"bluetooth":false},"signalStrength":75}],"sensors":[{"name":"Internal Temperature","type":"temperature","units":"°C","range":{"min":-40.00,"max":85.00},"currentValue":23.50,"isConnected":true,"bus":{"type":"i2c","address":72}}],"storageDevices":[{"name":"Internal Flash","type":"flash","totalSizeKB":1024,"freeSpaceKB":512,"isWriteProtected":false,"isRemovable":false,"isPresent":true}]}
+
+=== All tests passed successfully! ===
+<end of output>
+Test time =   0.32 sec
+----------------------------------------------------------
+Test Passed.
+"DeviceInfoTest" end time: May 06 00:09 KST
+"DeviceInfoTest" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/3 Testing: DynamicToolsTest
+2/3 Test: DynamicToolsTest
+Command: "/Users/jsha/Desktop/Works/workspace/mcp/mcp_example/autostudio-embedded/build/test_dynamic_tools"
+Directory: /Users/jsha/Desktop/Works/workspace/mcp/mcp_example/autostudio-embedded/build
+"DynamicToolsTest" start time: May 06 00:09 KST
+Output:
+----------------------------------------------------------
+=== Dynamic Tool Registration and Persistence Test ===
+
+Initializing test environment...
+
+==== Testing Dynamic Tool Registration ====
+Registering dynamic composite tool...
+Failed to register dynamic tool, error: -2
+Test failed: Dynamic tool registration failed
+<end of output>
+Test time =   0.21 sec
+----------------------------------------------------------
+Test Failed.
+"DynamicToolsTest" end time: May 06 00:09 KST
+"DynamicToolsTest" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/3 Testing: SelfContainedTest
+3/3 Test: SelfContainedTest
+Command: "/Users/jsha/Desktop/Works/workspace/mcp/mcp_example/autostudio-embedded/build/self_contained_test"
+Directory: /Users/jsha/Desktop/Works/workspace/mcp/mcp_example/autostudio-embedded/build
+"SelfContainedTest" start time: May 06 00:09 KST
+Output:
+----------------------------------------------------------
+=== MCP Implementation Test ===
+
+Test 1: Get device info
+Device Name: Test Device
+Firmware Version: 1.0.0
+Platform: Test Platform
+
+Test 2: Convert device info to JSON
+JSON: {"deviceName":"Test Device","firmwareVersion":"1.0.0","platformName":"Test Platform"}
+
+Test 3: Extract field from JSON
+Extracted deviceName: Test Device
+Extracted firmwareVersion: 1.0.0
+
+Test 4: Validate schema
+Schema validation result: Valid
+
+=== All tests passed! ===
+<end of output>
+Test time =   0.21 sec
+----------------------------------------------------------
+Test Passed.
+"SelfContainedTest" end time: May 06 00:09 KST
+"SelfContainedTest" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: May 06 00:09 KST
