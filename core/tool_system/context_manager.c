@@ -554,13 +554,6 @@ MCP_Variable MCP_VariableCreateObject(void* value) {
     return var;
 }
 
-MCP_Variable MCP_VariableCreateObject(void* value) {
-    MCP_Variable var;
-    var.type = MCP_VAR_TYPE_OBJECT;
-    var.value.objectValue = value;
-    return var;
-}
-
 MCP_Variable MCP_VariableCreateArray(void* value) {
     MCP_Variable var;
     var.type = MCP_VAR_TYPE_ARRAY;
