@@ -1,1 +1,0 @@
-/usr/bin/c++  -Wall -Wextra -DMCP_OS_ESP32 -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/mcp_embedded.dir/src/main.cpp.o CMakeFiles/mcp_embedded.dir/src/hal/esp32/mcp_esp32.c.o CMakeFiles/mcp_embedded.dir/src/hal/esp32/hal_esp32.c.o -o mcp_embedded  libmcp_lib.a

@@ -1,5 +1,0 @@
----
-triple:          'arm64-apple-darwin'
-binary-path:     self_contained_test
-relocations:     []
-...

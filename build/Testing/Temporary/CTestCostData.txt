@@ -1,5 +1,0 @@
-DeviceInfoTest 1 0.315771
-DynamicToolsTest 0 0
-SelfContainedTest 1 0.213811
----
-DynamicToolsTest
