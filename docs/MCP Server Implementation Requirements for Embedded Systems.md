@@ -18,10 +18,23 @@ This implementation is specifically optimized for resource-constrained embedded 
 ### 2.1 Network Connectivity
 Connect to MCP-enabled devices through:
 
+- **Ethernet** (Wired network connection)
+  - Default port: 5555
+  - Protocol: TCP
+  - Connection string: `tcp://{device-ip}:5555`
+  - Supports DHCP or static IP configuration
+  - mDNS/Bonjour discovery support
+
 - **WiFi** (ESP32, Raspberry Pi, many Arduino boards)
   - Default port: 5555
   - Protocol: TCP
   - Connection string: `tcp://{device-ip}:5555`
+
+- **USB** (Direct connection to host computer)
+  - Communication Device Class (CDC) virtual serial port
+  - Human Interface Device (HID) class
+  - Vendor-specific class
+  - Connection string: `usb://{vid}:{pid}`
 
 - **Bluetooth Low Energy** (ESP32, Arduino with BLE capabilities)
   - Service UUID: "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -32,15 +45,83 @@ Connect to MCP-enabled devices through:
   - Baud rate: 115200
   - Connection string: `serial://{port}?baud=115200`
 
-### 2.2 Authentication
+### 2.2 Transport Configuration
 
-When connecting, provide authentication credentials:
+The MCP server supports multiple simultaneous transport methods for maximum connectivity flexibility. Transport configuration can be done through the MCP API itself, allowing dynamic reconfiguration at runtime.
+
+Configure Ethernet interface:
+```json
+{
+  "tool": "transport.configureEthernet",
+  "params": {
+    "mode": "dhcp",
+    "port": 5555,
+    "enableMDNS": true,
+    "mdnsServiceName": "mcp-device"
+  }
+}
+```
+
+Configure USB interface:
+```json
+{
+  "tool": "transport.configureUSB",
+  "params": {
+    "vendorId": 9876,
+    "productId": 1234,
+    "deviceClass": "cdc",
+    "serialNumber": "MCP123456",
+    "manufacturer": "MCP Device",
+    "productName": "MCP USB Device"
+  }
+}
+```
+
+Get transport status:
+```json
+{
+  "tool": "transport.getStatus"
+}
+```
+
+### 2.3 Authentication
+
+By default, the system operates in an open authentication mode where ALL operations are enabled without any security. No authentication credentials are required for any operations in this default mode.
+
+When security is enabled (optional), you can provide authentication credentials as follows:
 ```json
 {
   "auth": {
     "method": "bearer",
     "token": "your-api-key"
   }
+}
+```
+
+This open-by-default approach allows complete device configuration including driver registration, tool creation, and automation rules - all before any security is applied. You can manage authentication settings using these tools:
+
+```json
+{
+  "tool": "system.setAuth",
+  "params": {
+    "method": "bearer",
+    "token": "your-secure-token",
+    "persistent": true
+  }
+}
+```
+
+To check current authentication status:
+```json
+{
+  "tool": "system.getAuthStatus"
+}
+```
+
+To remove authentication (restore open access):
+```json
+{
+  "tool": "system.clearAuth"
 }
 ```
 
@@ -225,6 +306,13 @@ The MCP server exposes various tools for interacting with the embedded system:
 - `tools.export` - Export tool definitions
 - `tools.import` - Import tool definitions
 
+### 5.8 Driver Management
+- `system.defineDriver` - Register a new dynamic hardware driver with bytecode implementation
+- `system.listDrivers` - List available drivers
+- `system.removeDriver` - Unregister a dynamic driver
+- `system.executeDriverFunction` - Execute a function on a bytecode driver
+- `system.compileDriverBytecode` - Compile high-level code to driver bytecode
+
 ## 6. Using Tools with LLMs
 
 When crafting LLM prompts to interface with MCP devices, follow these patterns:
@@ -283,6 +371,74 @@ To create a tool that reads multiple sensors at once:
 }
 ```
 
+### 6.4 Creating a Dynamic Driver with Bytecode
+```
+To define a custom temperature sensor driver:
+{
+  "tool": "system.defineDriver",
+  "params": {
+    "id": "customTempSensor",
+    "name": "My Custom Temperature Sensor",
+    "version": "1.0.0",
+    "type": 0,
+    "implementation": {
+      "init": {
+        "instructions": [
+          {"op": "PUSH_NUM", "value": 0},
+          {"op": "HALT"}
+        ]
+      },
+      "read": {
+        "instructions": [
+          {"op": "PUSH_STR", "index": 0},
+          {"op": "HALT"}
+        ],
+        "stringPool": [
+          "{\"value\": 22.5, \"units\": \"C\"}"
+        ]
+      },
+      "write": {
+        "instructions": [
+          {"op": "PUSH_NUM", "value": 0},
+          {"op": "HALT"}
+        ]
+      },
+      "control": {
+        "instructions": [
+          {"op": "PUSH_VAR", "index": 0},
+          {"op": "PUSH_NUM", "value": 1},
+          {"op": "EQ"},
+          {"op": "JUMP_IF_NOT", "address": 5},
+          {"op": "PUSH_NUM", "value": 0},
+          {"op": "JUMP", "address": 6},
+          {"op": "PUSH_NUM", "value": -1},
+          {"op": "HALT"}
+        ],
+        "variables": ["command"]
+      },
+      "getStatus": {
+        "instructions": [
+          {"op": "PUSH_STR", "index": 0},
+          {"op": "HALT"}
+        ],
+        "stringPool": [
+          "{\"status\": \"ready\", \"uptime\": 3600}"
+        ]
+      }
+    },
+    "configSchema": {
+      "type": "object",
+      "properties": {
+        "address": {"type": "number", "description": "I2C address of the sensor"},
+        "updateRate": {"type": "number", "description": "Update rate in milliseconds"}
+      },
+      "required": ["address"]
+    },
+    "persistent": true
+  }
+}
+```
+
 ## 7. Advanced Functionalities
 
 ### 7.1 Event Subscription
@@ -331,7 +487,116 @@ Create automated responses to specific conditions:
 }
 ```
 
-### 7.3 Bytecode Execution
+### 7.3 Dynamic Driver Registration with Bytecode
+Define and register hardware drivers at runtime without firmware updates using efficient bytecode:
+
+```json
+{
+  "tool": "system.defineDriver",
+  "params": {
+    "id": "customTemperatureSensor",
+    "name": "Custom Temperature Sensor",
+    "version": "1.0.0",
+    "type": 0,
+    "implementation": {
+      "init": {
+        "instructions": [
+          {"op": "PUSH_NUM", "value": 0},
+          {"op": "HALT"}
+        ]
+      },
+      "read": {
+        "instructions": [
+          {"op": "PUSH_STR", "index": 0},
+          {"op": "HALT"}
+        ],
+        "stringPool": [
+          "{\"value\": 25.5, \"units\": \"C\"}"
+        ]
+      },
+      "deinit": {
+        "instructions": [
+          {"op": "PUSH_NUM", "value": 0},
+          {"op": "HALT"}
+        ]
+      }
+    },
+    "configSchema": {
+      "type": "object",
+      "properties": {
+        "i2cAddress": {"type": "number"},
+        "sampleRate": {"type": "number"}
+      }
+    },
+    "persistent": true
+  }
+}
+```
+
+You can also compile more complex logic using `system.compileDriverBytecode`:
+
+```json
+{
+  "tool": "system.compileDriverBytecode",
+  "params": {
+    "sourceCode": "function read(params) { if (params.maxSize > 0) { return { value: 25.5, units: 'C' }; } else { return null; } }",
+    "function": "read"
+  }
+}
+```
+
+### 7.4 Native Driver Bridge System
+
+The Native Driver Bridge allows existing hardware drivers to be dynamically exposed through MCP without rewriting them as bytecode drivers:
+
+```json
+{
+  "tool": "system.registerNativeDriver",
+  "params": {
+    "id": "rgbLed",
+    "name": "RGB Status Indicator",
+    "type": 1,
+    "deviceType": 1002,
+    "configSchema": {
+      "type": "object",
+      "properties": {
+        "redPin": {"type": "number"},
+        "greenPin": {"type": "number"},
+        "bluePin": {"type": "number"},
+        "initialBrightness": {"type": "number"}
+      },
+      "required": ["redPin", "greenPin", "bluePin"]
+    }
+  }
+}
+```
+
+Execute native driver functions through MCP:
+
+```json
+{
+  "tool": "system.executeNativeDriverFunction",
+  "params": {
+    "id": "rgbLed",
+    "function": "setColor",
+    "args": {
+      "r": 255,
+      "g": 0,
+      "b": 128
+    }
+  }
+}
+```
+
+The bridge system currently supports these native driver types:
+
+- LED drivers (simple, PWM, RGB, RGBW, addressable)
+- Temperature sensors (DS18B20)
+- Additional drivers can be added through the bridge API
+
+For more information, see the [Driver Bridge Documentation](DRIVER_BRIDGE.md).
+
+### 7.5 Bytecode Execution
 For performance-critical operations, compile and execute bytecode directly:
 
 ```json

@@ -1,0 +1,266 @@
+{
+  "examples": [
+    {
+      "description": "Register a simple LED driver",
+      "request": {
+        "tool": "system.registerNativeDriver",
+        "params": {
+          "id": "statusLed",
+          "name": "Status Indicator LED",
+          "type": 1,
+          "deviceType": 1000,
+          "configSchema": {
+            "type": "object",
+            "properties": {
+              "pin": {"type": "number", "description": "GPIO pin number"},
+              "activeHigh": {"type": "boolean", "description": "Active high (true) or active low (false)"}
+            },
+            "required": ["pin"]
+          }
+        }
+      },
+      "response": {
+        "status": "success"
+      }
+    },
+    {
+      "description": "Register an RGB LED driver",
+      "request": {
+        "tool": "system.registerNativeDriver",
+        "params": {
+          "id": "rgbLed",
+          "name": "RGB Status Indicator",
+          "type": 1,
+          "deviceType": 1002,
+          "configSchema": {
+            "type": "object",
+            "properties": {
+              "redPin": {"type": "number"},
+              "greenPin": {"type": "number"},
+              "bluePin": {"type": "number"},
+              "commonAnode": {"type": "boolean"},
+              "initialBrightness": {"type": "number"}
+            },
+            "required": ["redPin", "greenPin", "bluePin"]
+          }
+        }
+      },
+      "response": {
+        "status": "success"
+      }
+    },
+    {
+      "description": "Register a DS18B20 temperature sensor",
+      "request": {
+        "tool": "system.registerNativeDriver",
+        "params": {
+          "id": "tempSensor",
+          "name": "Water Temperature Sensor",
+          "type": 0,
+          "deviceType": 2000,
+          "configSchema": {
+            "type": "object",
+            "properties": {
+              "pin": {"type": "number", "description": "OneWire pin number"},
+              "address": {"type": "number", "description": "DS18B20 ROM address (0 for single device)"},
+              "resolution": {"type": "number", "description": "Temperature resolution (0-3)"},
+              "useCRC": {"type": "boolean", "description": "Enable CRC checking"}
+            },
+            "required": ["pin"]
+          }
+        }
+      },
+      "response": {
+        "status": "success"
+      }
+    },
+    {
+      "description": "Initialize an LED driver",
+      "request": {
+        "tool": "system.executeDriverFunction",
+        "params": {
+          "id": "statusLed",
+          "function": "init",
+          "params": {
+            "pin": 13,
+            "activeHigh": true
+          }
+        }
+      },
+      "response": {
+        "status": "success"
+      }
+    },
+    {
+      "description": "Initialize a temperature sensor",
+      "request": {
+        "tool": "system.executeDriverFunction",
+        "params": {
+          "id": "tempSensor",
+          "function": "init",
+          "params": {
+            "pin": 5,
+            "resolution": 3,
+            "useCRC": true
+          }
+        }
+      },
+      "response": {
+        "status": "success"
+      }
+    },
+    {
+      "description": "Turn on an LED",
+      "request": {
+        "tool": "system.executeNativeDriverFunction",
+        "params": {
+          "id": "statusLed",
+          "function": "on"
+        }
+      },
+      "response": {
+        "status": "success"
+      }
+    },
+    {
+      "description": "Set RGB LED color",
+      "request": {
+        "tool": "system.executeNativeDriverFunction",
+        "params": {
+          "id": "rgbLed",
+          "function": "setColor",
+          "args": {
+            "r": 255,
+            "g": 0,
+            "b": 128
+          }
+        }
+      },
+      "response": {
+        "status": "success"
+      }
+    },
+    {
+      "description": "Read temperature from sensor",
+      "request": {
+        "tool": "system.executeDriverFunction",
+        "params": {
+          "id": "tempSensor",
+          "function": "read"
+        }
+      },
+      "response": {
+        "value": 24.5,
+        "units": "C"
+      }
+    },
+    {
+      "description": "Get LED state",
+      "request": {
+        "tool": "system.executeNativeDriverFunction",
+        "params": {
+          "id": "statusLed",
+          "function": "getState"
+        }
+      },
+      "response": {
+        "state": true
+      }
+    },
+    {
+      "description": "Toggle LED state",
+      "request": {
+        "tool": "system.executeNativeDriverFunction",
+        "params": {
+          "id": "statusLed",
+          "function": "toggle"
+        }
+      },
+      "response": {
+        "status": "success"
+      }
+    },
+    {
+      "description": "Get RGB LED status",
+      "request": {
+        "tool": "system.executeDriverFunction",
+        "params": {
+          "id": "rgbLed",
+          "function": "getStatus"
+        }
+      },
+      "response": {
+        "deviceType": "LED",
+        "state": true,
+        "brightness": 128,
+        "color": {
+          "r": 255,
+          "g": 0,
+          "b": 128
+        }
+      }
+    },
+    {
+      "description": "Get temperature sensor status",
+      "request": {
+        "tool": "system.executeDriverFunction",
+        "params": {
+          "id": "tempSensor",
+          "function": "getStatus"
+        }
+      },
+      "response": {
+        "deviceType": "DS18B20",
+        "temperature": 24.50,
+        "units": "C",
+        "resolution": 12
+      }
+    },
+    {
+      "description": "List all native drivers",
+      "request": {
+        "tool": "system.listNativeDrivers"
+      },
+      "response": {
+        "drivers": [
+          {
+            "id": "statusLed",
+            "name": "Status Indicator LED",
+            "type": "actuator",
+            "deviceType": 1000,
+            "initialized": true,
+            "bridgeType": "native"
+          },
+          {
+            "id": "rgbLed",
+            "name": "RGB Status Indicator",
+            "type": "actuator",
+            "deviceType": 1002,
+            "initialized": true,
+            "bridgeType": "native"
+          },
+          {
+            "id": "tempSensor",
+            "name": "Water Temperature Sensor",
+            "type": "sensor",
+            "deviceType": 2000,
+            "initialized": true,
+            "bridgeType": "native"
+          }
+        ]
+      }
+    },
+    {
+      "description": "Unregister a driver",
+      "request": {
+        "tool": "system.unregisterNativeDriver",
+        "params": {
+          "id": "rgbLed"
+        }
+      },
+      "response": {
+        "status": "success"
+      }
+    }
+  ]
+}

@@ -1,11 +1,10 @@
-/**
- * @file context_manager.c
- * @brief Implementation of execution context and variable management
- */
 #include "context_manager.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+// Thread-local context storage
+static MCP_ExecutionContext* s_currentContext = NULL;
 
 // Create a new execution context
 MCP_ExecutionContext* MCP_ContextCreate(const char* name, MCP_ExecutionContext* parent, int maxVariables) {
@@ -589,4 +588,46 @@ void MCP_VariableFree(MCP_Variable* variable) {
 
     // Reset type to null
     variable->type = MCP_VAR_TYPE_NULL;
+}
+
+// Set current execution context
+MCP_ExecutionContext* MCP_ContextSetCurrent(MCP_ExecutionContext* context) {
+    MCP_ExecutionContext* previous = s_currentContext;
+    s_currentContext = context;
+    return previous;
+}
+
+// Get current execution context
+MCP_ExecutionContext* MCP_ContextGetCurrent(void) {
+    return s_currentContext;
+}
+
+// Create a string variable and set it in the context
+int MCP_ContextSetValue(MCP_ExecutionContext* context, const char* name, const char* value) {
+    if (context == NULL || name == NULL) {
+        return -1;
+    }
+    
+    MCP_Variable var = MCP_VariableCreateString(value);
+    int result = MCP_ContextSetVariable(context, name, &var);
+    
+    // Free the variable's resources
+    MCP_VariableFree(&var);
+    
+    return result;
+}
+
+// Get a string value from the context
+const char* MCP_ContextGetValue(MCP_ExecutionContext* context, const char* name) {
+    if (context == NULL || name == NULL) {
+        return NULL;
+    }
+    
+    MCP_Variable var = MCP_ContextGetVariable(context, name);
+    
+    if (var.type == MCP_VAR_TYPE_STRING) {
+        return var.value.stringValue;
+    }
+    
+    return NULL;
 }

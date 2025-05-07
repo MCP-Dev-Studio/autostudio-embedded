@@ -1,0 +1,223 @@
+{
+  "title": "No-Code Device Setup Sequence",
+  "description": "This example shows how to set up a device completely using MCP with no pre-compiled drivers",
+  "steps": [
+    {
+      "stepId": 1,
+      "title": "Connect to device in open authentication mode",
+      "description": "Initial connection to the device, which starts with open authentication",
+      "request": {
+        "auth": null
+      },
+      "response": {
+        "status": "connected",
+        "session": "session_12345",
+        "deviceName": "MCP Embedded Device"
+      }
+    },
+    {
+      "stepId": 2,
+      "title": "Register essential drivers",
+      "description": "Register the needed hardware drivers for this device",
+      "requests": [
+        {
+          "title": "Register temperature sensor driver",
+          "request": {
+            "tool": "system.registerNativeDriver",
+            "params": {
+              "id": "tempSensor",
+              "name": "DS18B20 Temperature Sensor",
+              "type": 0,
+              "deviceType": 2000,
+              "configSchema": {
+                "type": "object",
+                "properties": {
+                  "pin": {"type": "number", "description": "OneWire pin number"},
+                  "resolution": {"type": "number", "description": "Temperature resolution (0-3)"},
+                  "useCRC": {"type": "boolean", "description": "Enable CRC checking"}
+                },
+                "required": ["pin"]
+              }
+            }
+          }
+        },
+        {
+          "title": "Register LED driver",
+          "request": {
+            "tool": "system.registerNativeDriver",
+            "params": {
+              "id": "statusLed",
+              "name": "Status LED",
+              "type": 1,
+              "deviceType": 1001,
+              "configSchema": {
+                "type": "object",
+                "properties": {
+                  "pin": {"type": "number", "description": "GPIO pin number"},
+                  "initialBrightness": {"type": "number", "description": "Initial brightness (0-255)"}
+                },
+                "required": ["pin"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "stepId": 3,
+      "title": "Initialize drivers with configuration",
+      "requests": [
+        {
+          "title": "Initialize temperature sensor",
+          "request": {
+            "tool": "system.executeDriverFunction",
+            "params": {
+              "id": "tempSensor",
+              "function": "init",
+              "params": {
+                "pin": 4,
+                "resolution": 3,
+                "useCRC": true
+              }
+            }
+          }
+        },
+        {
+          "title": "Initialize LED",
+          "request": {
+            "tool": "system.executeDriverFunction",
+            "params": {
+              "id": "statusLed",
+              "function": "init",
+              "params": {
+                "pin": 13,
+                "initialBrightness": 128
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "stepId": 4,
+      "title": "Create custom tools for the application",
+      "requests": [
+        {
+          "title": "Create a tool to read temperature and control LED",
+          "request": {
+            "tool": "tools.register",
+            "params": {
+              "definition": {
+                "name": "tempMonitor",
+                "description": "Monitor temperature and control indicator LED",
+                "type": "composite",
+                "tools": [
+                  {
+                    "tool": "system.executeDriverFunction",
+                    "params": {
+                      "id": "tempSensor",
+                      "function": "read"
+                    },
+                    "resultKey": "temperature"
+                  },
+                  {
+                    "tool": "system.executeDriverFunction",
+                    "params": {
+                      "id": "statusLed",
+                      "function": "setBrightness",
+                      "params": {
+                        "brightness": 255
+                      }
+                    },
+                    "resultKey": "ledStatus",
+                    "condition": "temperature.value > 25"
+                  },
+                  {
+                    "tool": "system.executeDriverFunction",
+                    "params": {
+                      "id": "statusLed",
+                      "function": "setBrightness",
+                      "params": {
+                        "brightness": 64
+                      }
+                    },
+                    "resultKey": "ledStatus",
+                    "condition": "temperature.value <= 25"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "stepId": 5,
+      "title": "Create automation rules",
+      "request": {
+        "tool": "automation.createRule",
+        "params": {
+          "name": "temperatureAlert",
+          "triggers": [
+            {
+              "type": "sensor",
+              "sensor": "tempSensor",
+              "condition": {
+                "operator": "greater_than",
+                "value": 30
+              }
+            }
+          ],
+          "actions": [
+            {
+              "tool": "system.executeDriverFunction",
+              "params": {
+                "id": "statusLed",
+                "function": "setColor",
+                "args": {
+                  "r": 255,
+                  "g": 0,
+                  "b": 0
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "stepId": 6,
+      "title": "Enable security",
+      "description": "After device is configured, enable proper security",
+      "request": {
+        "tool": "system.setAuth",
+        "params": {
+          "method": "bearer",
+          "token": "secure-device-token-12345",
+          "persistent": true
+        }
+      },
+      "response": {
+        "status": "success",
+        "message": "Authentication settings updated"
+      }
+    },
+    {
+      "stepId": 7,
+      "title": "Reconnect with security token",
+      "description": "Now authentication is required for all future connections",
+      "request": {
+        "auth": {
+          "method": "bearer",
+          "token": "secure-device-token-12345"
+        }
+      },
+      "response": {
+        "status": "connected",
+        "session": "session_67890",
+        "deviceName": "MCP Embedded Device"
+      }
+    }
+  ],
+  "conclusion": "The device has been fully configured with custom drivers, tools, automation, and security - all without any pre-compiled code specifically for this configuration. This demonstrates the power of a true no-code embedded system through MCP."
+}

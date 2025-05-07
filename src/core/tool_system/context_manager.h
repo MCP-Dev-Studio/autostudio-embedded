@@ -132,4 +132,38 @@ MCP_Variable MCP_VariableCreateArray(void* value);
  */
 void MCP_VariableFree(MCP_Variable* variable);
 
+/**
+ * @brief Set the current execution context
+ * 
+ * @param context Context to set as current
+ * @return MCP_ExecutionContext* Previous current context
+ */
+MCP_ExecutionContext* MCP_ContextSetCurrent(MCP_ExecutionContext* context);
+
+/**
+ * @brief Get the current execution context
+ * 
+ * @return MCP_ExecutionContext* Current context or NULL if none set
+ */
+MCP_ExecutionContext* MCP_ContextGetCurrent(void);
+
+/**
+ * @brief Set a string value in a context
+ * 
+ * @param context Execution context
+ * @param name Variable name
+ * @param value String value
+ * @return int 0 on success, negative error code on failure
+ */
+int MCP_ContextSetValue(MCP_ExecutionContext* context, const char* name, const char* value);
+
+/**
+ * @brief Get a string value from a context
+ * 
+ * @param context Execution context
+ * @param name Variable name
+ * @return const char* String value or NULL if not found or not a string
+ */
+const char* MCP_ContextGetValue(MCP_ExecutionContext* context, const char* name);
+
 #endif /* MCP_CONTEXT_MANAGER_H */

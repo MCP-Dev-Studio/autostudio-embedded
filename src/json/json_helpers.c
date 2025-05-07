@@ -84,6 +84,146 @@ bool json_get_bool_field(const char* json, const char* field, bool defaultValue)
     return defaultValue;
 }
 
+int json_get_int_field(const char* json, const char* field, int defaultValue) {
+    if (json == NULL || field == NULL) {
+        return defaultValue;
+    }
+    
+    // Search for "field": pattern
+    char pattern[256];
+    snprintf(pattern, sizeof(pattern), "\"%s\":", field);
+    
+    const char* start = strstr(json, pattern);
+    if (start == NULL) {
+        return defaultValue;
+    }
+    
+    // Move to start of value
+    start += strlen(pattern);
+    
+    // Skip whitespace
+    while (*start == ' ' || *start == '\t' || *start == '\n' || *start == '\r') {
+        start++;
+    }
+    
+    // Check if number
+    if (*start < '0' || *start > '9') {
+        return defaultValue;
+    }
+    
+    // Extract number
+    int value = 0;
+    if (sscanf(start, "%d", &value) != 1) {
+        return defaultValue;
+    }
+    
+    return value;
+}
+
+double json_get_double_field(const char* json, const char* field, double defaultValue) {
+    if (json == NULL || field == NULL) {
+        return defaultValue;
+    }
+    
+    // Search for "field": pattern
+    char pattern[256];
+    snprintf(pattern, sizeof(pattern), "\"%s\":", field);
+    
+    const char* start = strstr(json, pattern);
+    if (start == NULL) {
+        return defaultValue;
+    }
+    
+    // Move to start of value
+    start += strlen(pattern);
+    
+    // Skip whitespace
+    while (*start == ' ' || *start == '\t' || *start == '\n' || *start == '\r') {
+        start++;
+    }
+    
+    // Check if number
+    if ((*start < '0' || *start > '9') && *start != '-' && *start != '.') {
+        return defaultValue;
+    }
+    
+    // Extract number
+    double value = 0.0;
+    if (sscanf(start, "%lf", &value) != 1) {
+        return defaultValue;
+    }
+    
+    return value;
+}
+
+void* json_get_object_field(const char* json, const char* field) {
+    if (json == NULL || field == NULL) {
+        return NULL;
+    }
+    
+    // Search for "field": pattern
+    char pattern[256];
+    snprintf(pattern, sizeof(pattern), "\"%s\":", field);
+    
+    const char* start = strstr(json, pattern);
+    if (start == NULL) {
+        return NULL;
+    }
+    
+    // Move to start of value
+    start += strlen(pattern);
+    
+    // Skip whitespace
+    while (*start == ' ' || *start == '\t' || *start == '\n' || *start == '\r') {
+        start++;
+    }
+    
+    // Check if object
+    if (*start != '{') {
+        return NULL;
+    }
+    
+    // Find end of object
+    const char* end = start + 1;
+    int depth = 1;
+    
+    while (*end != '\0' && depth > 0) {
+        if (*end == '{') {
+            depth++;
+        } else if (*end == '}') {
+            depth--;
+        } else if (*end == '"') {
+            // Skip string
+            end++;
+            while (*end != '\0' && (*end != '"' || *(end-1) == '\\')) {
+                end++;
+            }
+        }
+        
+        if (depth > 0) {
+            end++;
+        }
+    }
+    
+    if (depth != 0) {
+        return NULL;
+    }
+    
+    // Allocate and copy object
+    size_t length = end - start + 1;
+    char* objectJson = (char*)malloc(length + 1);
+    if (objectJson == NULL) {
+        return NULL;
+    }
+    
+    strncpy(objectJson, start, length);
+    objectJson[length] = '\0';
+    
+    // Return pointer to object JSON string
+    // In a real implementation, you would parse this into a proper object
+    return objectJson;
+}
+
 typedef struct {
     char* jsonArray;
     size_t count;
