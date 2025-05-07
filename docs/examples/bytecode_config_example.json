@@ -1,0 +1,120 @@
+{
+  "examples": [
+    {
+      "name": "Get bytecode configuration",
+      "description": "Retrieve the current bytecode configuration from the server",
+      "tool": "system.bytecodeConfig",
+      "parameters": {
+        "action": "getConfig"
+      },
+      "result": {
+        "success": true,
+        "config": {
+          "max_bytecode_size": 8192,
+          "max_stack_size": 64,
+          "max_string_pool_size": 128,
+          "max_variable_count": 32,
+          "max_function_count": 16,
+          "max_execution_time_ms": 1000,
+          "dynamic_allocation": false,
+          "total_memory_limit": 16384
+        }
+      }
+    },
+    {
+      "name": "Set bytecode configuration",
+      "description": "Configure all bytecode parameters at once",
+      "tool": "system.bytecodeConfig",
+      "parameters": {
+        "action": "setConfig",
+        "config": {
+          "max_bytecode_size": 32768,
+          "max_stack_size": 256,
+          "max_string_pool_size": 512,
+          "max_variable_count": 128,
+          "max_function_count": 64,
+          "max_execution_time_ms": 2000,
+          "dynamic_allocation": true,
+          "total_memory_limit": 65536
+        }
+      },
+      "result": {
+        "success": true,
+        "applied_config": {
+          "max_bytecode_size": 32768,
+          "max_stack_size": 256,
+          "max_string_pool_size": 512,
+          "max_variable_count": 128,
+          "max_function_count": 64,
+          "max_execution_time_ms": 2000,
+          "dynamic_allocation": true,
+          "total_memory_limit": 65536
+        }
+      }
+    },
+    {
+      "name": "Reset bytecode configuration",
+      "description": "Reset bytecode configuration to default values",
+      "tool": "system.bytecodeConfig",
+      "parameters": {
+        "action": "resetConfig"
+      },
+      "result": {
+        "success": true,
+        "config": {
+          "max_bytecode_size": 8192,
+          "max_stack_size": 64,
+          "max_string_pool_size": 128,
+          "max_variable_count": 32,
+          "max_function_count": 16,
+          "max_execution_time_ms": 1000,
+          "dynamic_allocation": false,
+          "total_memory_limit": 16384
+        }
+      }
+    },
+    {
+      "name": "Get recommended configuration",
+      "description": "Get recommended configuration values based on system resources",
+      "tool": "system.bytecodeConfig",
+      "parameters": {
+        "action": "getRecommended"
+      },
+      "result": {
+        "success": true,
+        "recommended_config": {
+          "max_bytecode_size": 16384,
+          "max_stack_size": 128,
+          "max_string_pool_size": 256,
+          "max_variable_count": 64,
+          "max_function_count": 32,
+          "max_execution_time_ms": 1000,
+          "dynamic_allocation": true,
+          "total_memory_limit": 32768
+        },
+        "system_metrics": {
+          "available_memory": 67108,
+          "total_memory": 131072
+        }
+      }
+    },
+    {
+      "name": "Get bytecode memory statistics",
+      "description": "Get statistics about bytecode memory usage",
+      "tool": "system.bytecodeConfig",
+      "parameters": {
+        "action": "getStats"
+      },
+      "result": {
+        "success": true,
+        "stats": {
+          "total_allocated": 24576,
+          "allocation_limit": 65536,
+          "allocation_percentage": 37.5,
+          "available_memory": 67108,
+          "total_memory": 131072
+        }
+      }
+    }
+  ]
+}

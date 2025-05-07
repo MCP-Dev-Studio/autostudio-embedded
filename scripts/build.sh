@@ -23,4 +23,4 @@ echo "  - test_device_info: Device information test"
 echo "  - test_dynamic_tools: Dynamic tool registration test"
 echo "  - self_contained_test: Self-contained test"
 echo
-echo "To run tests use: ctest"
+echo "To run tests use: test"

@@ -232,7 +232,7 @@ The device information system provides a standardized way to expose device capab
 The tool registry enables dynamic registration and execution of tools. Tools can be:
 
 - Native (implemented in C/C++)
-- Composite (composed of other tools)
+- Composite (composed of other tools)[build.sh](scripts/build.sh)
 - Script-based
 - Bytecode
 
@@ -251,4 +251,8 @@ For detailed documentation, see the docs directory:
 
 ## License
 
-[MIT License](LICENSE)
+[Apache License 2.0](LICENSE)
+
+Copyright 2025 MCP Embedded System
+
+Licensed under the Apache License, Version 2.0

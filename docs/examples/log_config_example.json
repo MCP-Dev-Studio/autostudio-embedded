@@ -1,0 +1,149 @@
+{
+  "examples": [
+    {
+      "name": "Get logging configuration",
+      "description": "Retrieve the current logging configuration from the server",
+      "tool": "mcp.logging",
+      "parameters": {
+        "action": "getConfig"
+      },
+      "result": {
+        "success": true,
+        "config": {
+          "enabled": true,
+          "maxLevel": 3,
+          "outputs": 3,
+          "includeTimestamp": true,
+          "includeLevelName": true,
+          "includeModuleName": true,
+          "filterByModule": false,
+          "allowedModules": []
+        }
+      }
+    },
+    {
+      "name": "Set logging configuration",
+      "description": "Configure all logging parameters at once",
+      "tool": "mcp.logging",
+      "parameters": {
+        "action": "setConfig",
+        "config": {
+          "enabled": true,
+          "maxLevel": 4,
+          "outputs": 3,
+          "includeTimestamp": true,
+          "includeLevelName": true,
+          "includeModuleName": true,
+          "filterByModule": true,
+          "allowedModules": ["MAIN", "NETWORK", "SENSOR"]
+        }
+      },
+      "result": {
+        "success": true
+      }
+    },
+    {
+      "name": "Enable logging",
+      "description": "Enable logging output via MCP",
+      "tool": "mcp.logging",
+      "parameters": {
+        "action": "enableLogging"
+      },
+      "result": {
+        "success": true,
+        "enabled": true,
+        "previousState": false
+      }
+    },
+    {
+      "name": "Disable logging",
+      "description": "Disable logging output via MCP",
+      "tool": "mcp.logging",
+      "parameters": {
+        "action": "disableLogging"
+      },
+      "result": {
+        "success": true,
+        "enabled": false,
+        "previousState": true
+      }
+    },
+    {
+      "name": "Set log level",
+      "description": "Set the maximum log level to display",
+      "tool": "mcp.logging",
+      "parameters": {
+        "action": "setLevel",
+        "level": "debug"
+      },
+      "result": {
+        "success": true,
+        "level": "debug",
+        "previousLevel": "info"
+      }
+    },
+    {
+      "name": "Add module to allowed list",
+      "description": "Add a module name to the filtering whitelist",
+      "tool": "mcp.logging",
+      "parameters": {
+        "action": "addModule",
+        "moduleName": "NETWORK"
+      },
+      "result": {
+        "success": true,
+        "moduleName": "NETWORK"
+      }
+    },
+    {
+      "name": "Remove module from allowed list",
+      "description": "Remove a module name from the filtering whitelist",
+      "tool": "mcp.logging",
+      "parameters": {
+        "action": "removeModule",
+        "moduleName": "NETWORK"
+      },
+      "result": {
+        "success": true,
+        "moduleName": "NETWORK"
+      }
+    },
+    {
+      "name": "Clear module whitelist",
+      "description": "Remove all module names from the filtering whitelist",
+      "tool": "mcp.logging",
+      "parameters": {
+        "action": "clearModules"
+      },
+      "result": {
+        "success": true
+      }
+    },
+    {
+      "name": "Enable module filtering",
+      "description": "Enable filtering logs by module name",
+      "tool": "mcp.logging",
+      "parameters": {
+        "action": "enableModuleFilter"
+      },
+      "result": {
+        "success": true,
+        "filterByModule": true,
+        "previousState": false
+      }
+    },
+    {
+      "name": "Disable module filtering",
+      "description": "Disable filtering logs by module name",
+      "tool": "mcp.logging",
+      "parameters": {
+        "action": "disableModuleFilter"
+      },
+      "result": {
+        "success": true,
+        "filterByModule": false,
+        "previousState": true
+      }
+    }
+  ]
+}
