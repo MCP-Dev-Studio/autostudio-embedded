@@ -1,6 +1,10 @@
 #ifndef MCP_OS_CORE_H
 #define MCP_OS_CORE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @file mcp_os_core.h
  * @brief Core header file for MCP OS
@@ -10,7 +14,41 @@
  */
 
 /* Include platform detection */
-#if defined(MCP_OS_MBED)
+#if defined(MCP_OS_HOST) || defined(MCP_PLATFORM_HOST) || defined(HOST)
+    /* For host testing platform */
+    #define MCP_OS_HOST 1
+    #define MCP_PLATFORM_HOST 1
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include <stdint.h>
+    #include <stdbool.h>
+    #include <unistd.h>
+
+    /* Host platform configuration */
+    typedef struct {
+        int port;
+        char host[64];
+        int baudRate;
+        char logFile[256];
+        int logLevel;
+        bool useTCP;
+    } MCP_HostConfig;
+    
+    /* Forward declarations for host platform functions */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    int MCP_LoadPersistentState(void);
+    int MCP_ServerStart(void);
+    int MCP_SystemProcess(uint32_t timeout);
+
+#ifdef __cplusplus
+}
+#endif
+    
+#elif defined(MCP_OS_MBED)
     #include "hal/mbed/mcp_mbed.h"
     #include "hal/mbed/hal_mbed.h"
     #include "hal/mbed/io_mapper.h"
@@ -21,8 +59,11 @@
 #elif defined(MCP_OS_ESP32)
     #include "hal/esp32/mcp_esp32.h"
     #include "hal/esp32/hal_esp32.h"
+#elif defined(MCP_OS_RPI)
+    #include "hal/rpi/mcp_rpi.h"
+    #include "hal/rpi/hal_rpi.h"
 #else
-    #error "No platform defined! Define MCP_OS_MBED, MCP_OS_ARDUINO, or MCP_OS_ESP32"
+    #error "No platform defined! Define MCP_OS_HOST, MCP_OS_MBED, MCP_OS_ARDUINO, MCP_OS_ESP32, or MCP_OS_RPI"
 #endif
 
 /* Core layer includes */
@@ -32,11 +73,17 @@
 #include "core/kernel/config_system.h"
 
 /* Tool system includes */
+/* Use consolidated headers for all platforms */
 #include "core/tool_system/tool_registry.h"
+#include "core/tool_system/tool_info.h"
+
+#if !defined(MCP_OS_HOST) && !defined(MCP_PLATFORM_HOST)
+/* For regular platforms, include additional tool system headers */
 #include "core/tool_system/tool_handler.h"
 #include "core/tool_system/automation_engine.h"
 #include "core/tool_system/rule_interpreter.h"
 #include "core/tool_system/bytecode_interpreter.h"
+#endif
 
 /* Device layer includes */
 #include "core/device/driver_manager.h"
@@ -54,7 +101,7 @@
 #include "core/mcp/server_nocode.h"
 
 /* Utility includes */
-#include "json_parser.h"
+#include "../json/json_parser.h"
 #include "persistent_storage.h"
 #include "logging.h"
 
@@ -88,5 +135,9 @@
 #define MCP_OS_MEMORY_TOOL_SIZE (MCP_OS_MEMORY_SIZE / 5)
 #define MCP_OS_MEMORY_RESOURCE_SIZE (MCP_OS_MEMORY_SIZE / 5)
 #define MCP_OS_MEMORY_SYSTEM_SIZE (MCP_OS_MEMORY_SIZE / 5)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MCP_OS_CORE_H */

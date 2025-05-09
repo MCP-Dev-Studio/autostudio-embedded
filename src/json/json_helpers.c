@@ -29,8 +29,11 @@ char* json_get_string_field(const char* json, const char* field) {
     // Find end of string (next " not preceded by \)
     const char* end = start;
     while (*end != '\0') {
-        if (*end == '"' && (end == start || *(end-1) != '\\')) {
-            break;
+        if (*end == '"') {
+            // Check if this is an escaped quote or a real ending quote
+            if (end == start || *(end-1) != '\\') {
+                break;
+            }
         }
         end++;
     }
@@ -195,7 +198,13 @@ void* json_get_object_field(const char* json, const char* field) {
         } else if (*end == '"') {
             // Skip string
             end++;
-            while (*end != '\0' && (*end != '"' || *(end-1) == '\\')) {
+            while (*end != '\0') {
+                if (*end == '"') {
+                    // Make sure this is not an escaped quote
+                    if (*(end-1) != '\\') {
+                        break;
+                    }
+                }
                 end++;
             }
         }
@@ -268,7 +277,13 @@ void* json_get_array_field(const char* json, const char* field) {
         } else if (*end == '"') {
             // Skip string
             end++;
-            while (*end != '\0' && (*end != '"' || *(end-1) == '\\')) {
+            while (*end != '\0') {
+                if (*end == '"') {
+                    // Make sure this is not an escaped quote
+                    if (*(end-1) != '\\') {
+                        break;
+                    }
+                }
                 end++;
             }
         }
@@ -321,7 +336,13 @@ void* json_get_array_field(const char* json, const char* field) {
                 } else if (*p == '"') {
                     // Skip string
                     p++;
-                    while (p < end && (*p != '"' || *(p-1) == '\\')) {
+                    while (p < end) {
+                        if (*p == '"') {
+                            // Make sure this is not an escaped quote
+                            if (*(p-1) != '\\') {
+                                break;
+                            }
+                        }
                         p++;
                     }
                 }
@@ -335,7 +356,13 @@ void* json_get_array_field(const char* json, const char* field) {
         } else if (*p == '"') {
             // Skip string
             p++;
-            while (p < end && (*p != '"' || *(p-1) == '\\')) {
+            while (p < end) {
+                if (*p == '"') {
+                    // Make sure this is not an escaped quote
+                    if (*(p-1) != '\\') {
+                        break;
+                    }
+                }
                 p++;
             }
             p++;
@@ -404,7 +431,13 @@ char* json_array_get_item(const void* array, size_t index) {
                 } else if (*p == '"') {
                     // Skip string
                     p++;
-                    while (*p != '"' || *(p-1) == '\\') {
+                    while (*p != '\0') {
+                        if (*p == '"') {
+                            // Make sure this is not an escaped quote
+                            if (*(p-1) != '\\') {
+                                break;
+                            }
+                        }
                         p++;
                     }
                 }
@@ -418,7 +451,13 @@ char* json_array_get_item(const void* array, size_t index) {
         } else if (*p == '"') {
             // Skip string
             p++;
-            while (*p != '"' || *(p-1) == '\\') {
+            while (*p != '\0') {
+                if (*p == '"') {
+                    // Make sure this is not an escaped quote
+                    if (*(p-1) != '\\') {
+                        break;
+                    }
+                }
                 p++;
             }
             p++;
@@ -450,7 +489,13 @@ char* json_array_get_item(const void* array, size_t index) {
             } else if (*p == '"') {
                 // Skip string
                 p++;
-                while (*p != '"' || *(p-1) == '\\') {
+                while (*p != '\0') {
+                    if (*p == '"') {
+                        // Make sure this is not an escaped quote
+                        if (*(p-1) != '\\') {
+                            break;
+                        }
+                    }
                     p++;
                 }
             }
@@ -464,7 +509,13 @@ char* json_array_get_item(const void* array, size_t index) {
     } else if (*start == '"') {
         // Skip string
         p++;
-        while (*p != '"' || *(p-1) == '\\') {
+        while (*p != '\0') {
+            if (*p == '"') {
+                // Make sure this is not an escaped quote
+                if (*(p-1) != '\\') {
+                    break;
+                }
+            }
             p++;
         }
         p++;

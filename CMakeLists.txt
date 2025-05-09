@@ -1,92 +1,58 @@
 cmake_minimum_required(VERSION 3.10)
-project(MCP_Embedded_System C CXX)
+project(MCP_Embedded)
 
-# Set C/C++ standards
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_STANDARD 11)
-
-# Compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -DMCP_OS_ESP32")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -DMCP_OS_ESP32")
-
-# Define source directories
-set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(CORE_DIR ${SRC_DIR}/core)
-set(DRIVER_DIR ${SRC_DIR}/driver)
-set(HAL_DIR ${SRC_DIR}/hal)
-set(JSON_DIR ${SRC_DIR}/json)
-set(SYSTEM_DIR ${SRC_DIR}/system)
-set(TEST_DIR ${SRC_DIR}/test)
-set(UTIL_DIR ${SRC_DIR}/util)
+# Define HOST platform
+add_compile_definitions(MCP_OS_HOST=1 MCP_PLATFORM_HOST=1)
+message(STATUS "Building for HOST platform")
 
 # Include directories
 include_directories(
-    ${SRC_DIR}
-    ${CORE_DIR}
-    ${DRIVER_DIR}
-    ${HAL_DIR}
-    ${JSON_DIR}
-    ${SYSTEM_DIR}
-    ${UTIL_DIR}
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
 )
 
-# Find all source files
-file(GLOB_RECURSE CORE_SOURCES "${CORE_DIR}/*.c")
-file(GLOB_RECURSE DRIVER_SOURCES "${DRIVER_DIR}/*.c")
-file(GLOB_RECURSE JSON_SOURCES "${JSON_DIR}/*.c")
-file(GLOB_RECURSE SYSTEM_SOURCES "${SYSTEM_DIR}/*.c")
-file(GLOB_RECURSE UTIL_SOURCES "${UTIL_DIR}/*.c")
-
-# Make sure json_helpers.c is included
-list(APPEND JSON_SOURCES "${JSON_DIR}/json_helpers.c")
-
-# Define specific HAL files to include (ESP32 only)
-set(HAL_SOURCES 
-    "${HAL_DIR}/esp32/hal_esp32.c"
-    "${HAL_DIR}/esp32/mcp_esp32.c"
+# Find source files for the HOST platform - using consolidated files with conditional compilation
+set(CORE_SOURCES
+    src/core/kernel/memory_manager.c
+    src/core/kernel/task_scheduler.c
+    src/core/tool_system/tool_registry.c
+    src/core/tool_system/tool_handler.c
+    src/core/mcp/auth_manager.c
+    src/core/mcp/server_init.c
+    src/core/mcp/content.c
+    src/core/mcp/content_api_helpers.c
 )
 
-# Main MCP library
-add_library(mcp_lib STATIC
-    ${CORE_SOURCES}
-    ${JSON_SOURCES}
-    ${SYSTEM_SOURCES}
-    ${UTIL_SOURCES}
-    ${HAL_SOURCES}
+# Use consolidated logging files
+set(LOGGING_SOURCES
+    src/core/mcp/logging/mcp_logging_tool.c
 )
 
-# Main executable
-add_executable(mcp_embedded
-    ${SRC_DIR}/main.cpp
-    ${HAL_DIR}/esp32/mcp_esp32.c
-    ${HAL_DIR}/esp32/hal_esp32.c
-)
-target_link_libraries(mcp_embedded mcp_lib)
-
-# Testing executables
-add_executable(test_device_info
-    ${SRC_DIR}/test/test_device_info.c
-    ${SRC_DIR}/test/json_device_info_mock.c
-)
-target_link_libraries(test_device_info mcp_lib)
-
-add_executable(test_dynamic_tools
-    ${SRC_DIR}/test/test_dynamic_tools.c
-    ${SRC_DIR}/test/json_mock.c
-)
-target_link_libraries(test_dynamic_tools mcp_lib)
-
-add_executable(self_contained_test
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/self_contained_test.c
+# Common sources for all platforms
+set(COMMON_SOURCES
+    src/json/json_parser.c
+    src/system/logging.c
+    src/system/mcp_system.c
+    src/system/persistent_storage.c
+    src/util/platform_compatibility.c  # Use consolidated platform_compatibility file
 )
 
-# Install targets
-install(TARGETS mcp_embedded
-    RUNTIME DESTINATION bin
+file(GLOB MAIN_SOURCE "src/main.cpp")
+
+# Combine sources
+set(SOURCES ${CORE_SOURCES} ${LOGGING_SOURCES} ${COMMON_SOURCES} ${MAIN_SOURCE})
+
+# Create executable
+add_executable(mcp_embedded ${SOURCES})
+
+# Set output directory
+set_target_properties(mcp_embedded PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/bin"
 )
 
-# Testing
-enable_testing()
-add_test(NAME DeviceInfoTest COMMAND test_device_info)
-add_test(NAME DynamicToolsTest COMMAND test_dynamic_tools)
-add_test(NAME SelfContainedTest COMMAND self_contained_test)
+# Add C++11 support
+target_compile_features(mcp_embedded PRIVATE cxx_std_11)
+
+# Add debug symbols in debug mode
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")

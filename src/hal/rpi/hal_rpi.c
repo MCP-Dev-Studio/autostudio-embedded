@@ -9,6 +9,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
 
 // Memory-mapped I/O
 static volatile uint32_t* gpio_base = NULL;
@@ -17,6 +23,9 @@ static volatile uint32_t* spi0_base = NULL;
 static volatile uint32_t* i2c0_base = NULL;
 static volatile uint32_t* pwm_base = NULL;
 static volatile uint32_t* timer_base = NULL;
+
+// File descriptor for /dev/mem
+static int mem_fd = -1;
 
 // GPIO registers offsets
 #define GPFSEL_OFFSET(pin)      (pin / 10)
@@ -86,18 +95,34 @@ static bool s_timer_initialized = false;
 
 // Memory mapping helpers
 static void* mmio_map(uint64_t phys_addr, size_t size) {
-    // In a real bare metal implementation, this would just return the physical address
-    // since there's no MMU virtualization. For testing, we simulate with malloc.
-    void* mem = malloc(size);
-    if (mem != NULL) {
-        memset(mem, 0, size);
+    void *mapped_addr;
+    
+    // Open /dev/mem if not already open
+    if (mem_fd < 0) {
+        mem_fd = open("/dev/mem", O_RDWR | O_SYNC);
+        if (mem_fd < 0) {
+            log_error("Failed to open /dev/mem: %s", strerror(errno));
+            return NULL;
+        }
     }
-    return mem;
+    
+    // Map physical memory to virtual address space
+    mapped_addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, phys_addr);
+    
+    if (mapped_addr == MAP_FAILED) {
+        log_error("Failed to map memory at 0x%lx: %s", phys_addr, strerror(errno));
+        return NULL;
+    }
+    
+    return mapped_addr;
 }
 
 static void mmio_unmap(void* addr, size_t size) {
-    // In bare metal, this would be a no-op. For testing, we free the simulated memory.
-    free(addr);
+    if (addr != NULL && addr != MAP_FAILED) {
+        if (munmap(addr, size) < 0) {
+            log_error("Failed to unmap memory: %s", strerror(errno));
+        }
+    }
 }
 
 /**
@@ -187,6 +212,12 @@ int hal_rpi_deinit(void) {
     if (timer_base != NULL) {
         mmio_unmap((void*)timer_base, 0x1000);
         timer_base = NULL;
+    }
+    
+    // Close /dev/mem file descriptor
+    if (mem_fd >= 0) {
+        close(mem_fd);
+        mem_fd = -1;
     }
 
     s_timer_initialized = false;
@@ -851,9 +882,28 @@ void hal_rpi_delay_ms(uint32_t ms) {
  * @brief Get CPU temperature
  */
 float hal_rpi_get_temperature(void) {
-    // Temperature measurement requires VC mailbox, which is not implemented in this basic HAL
-    // For simulation purposes, return a reasonable value
-    return 45.0f; // 45°C
+    float temperature = 0.0f;
+    FILE *thermal_file;
+    char buffer[100];
+    
+    // Open the temperature file from the thermal zone
+    thermal_file = fopen("/sys/class/thermal/thermal_zone0/temp", "r");
+    if (thermal_file == NULL) {
+        log_error("Failed to open thermal zone file");
+        return -1.0f;
+    }
+    
+    // Read temperature value (in millidegrees Celsius)
+    if (fgets(buffer, sizeof(buffer), thermal_file) != NULL) {
+        int temp_milliC = atoi(buffer);
+        temperature = (float)temp_milliC / 1000.0f;
+    } else {
+        log_error("Failed to read temperature");
+        temperature = -1.0f;
+    }
+    
+    fclose(thermal_file);
+    return temperature;
 }
 
 /**
@@ -864,27 +914,65 @@ int hal_rpi_get_memory_info(uint32_t* total, uint32_t* free) {
         return -1;
     }
 
-    // Set simulated values based on Pi model
-#if defined(RPI_MODEL_1)
-    *total = 512 * 1024 * 1024; // 512MB
-    *free = 256 * 1024 * 1024;  // 256MB
-#elif defined(RPI_MODEL_2)
-    *total = 1024 * 1024 * 1024; // 1GB
-    *free = 512 * 1024 * 1024;   // 512MB
-#elif defined(RPI_MODEL_3) || defined(RPI_MODEL_400)
-    *total = 1024 * 1024 * 1024; // 1GB
-    *free = 512 * 1024 * 1024;   // 512MB
-#elif defined(RPI_MODEL_4)
-    *total = 4 * 1024 * 1024 * 1024ULL; // 4GB (Pi 4 comes in 1/2/4/8GB variants)
-    *free = 2 * 1024 * 1024 * 1024ULL;  // 2GB
-#elif defined(RPI_MODEL_5)
-    *total = 8 * 1024 * 1024 * 1024ULL; // 8GB (Pi 5 comes in 4/8GB variants)
-    *free = 4 * 1024 * 1024 * 1024ULL;  // 4GB
-#else
-    *total = 1024 * 1024 * 1024; // 1GB (default)
-    *free = 512 * 1024 * 1024;   // 512MB
-#endif
-
+    FILE *meminfo;
+    char line[128];
+    uint64_t mem_total = 0;
+    uint64_t mem_free = 0;
+    uint64_t mem_available = 0;
+    bool found_total = false;
+    bool found_free = false;
+    bool found_available = false;
+    
+    // Open /proc/meminfo to get real memory information
+    meminfo = fopen("/proc/meminfo", "r");
+    if (meminfo == NULL) {
+        log_error("Failed to open /proc/meminfo");
+        
+        // Fallback to reasonable defaults if we can't read the file
+        *total = 1024 * 1024 * 1024; // 1GB (default)
+        *free = 512 * 1024 * 1024;   // 512MB
+        return -2;
+    }
+    
+    // Parse the file for memory information
+    while (fgets(line, sizeof(line), meminfo) != NULL) {
+        // Total memory
+        if (strncmp(line, "MemTotal:", 9) == 0) {
+            sscanf(line, "MemTotal: %llu kB", &mem_total);
+            found_total = true;
+        }
+        // Free memory
+        else if (strncmp(line, "MemFree:", 8) == 0) {
+            sscanf(line, "MemFree: %llu kB", &mem_free);
+            found_free = true;
+        }
+        // Available memory (better metric than just free)
+        else if (strncmp(line, "MemAvailable:", 13) == 0) {
+            sscanf(line, "MemAvailable: %llu kB", &mem_available);
+            found_available = true;
+        }
+        
+        // If we've found all the values we need, break the loop
+        if (found_total && found_free && found_available) {
+            break;
+        }
+    }
+    
+    fclose(meminfo);
+    
+    // Convert from kB to bytes
+    *total = (uint32_t)(mem_total * 1024);
+    
+    // Prefer MemAvailable over MemFree if available
+    if (found_available) {
+        *free = (uint32_t)(mem_available * 1024);
+    } else if (found_free) {
+        *free = (uint32_t)(mem_free * 1024);
+    } else {
+        // Fallback if we couldn't read the values
+        *free = *total / 2;
+    }
+    
     return 0;
 }
 

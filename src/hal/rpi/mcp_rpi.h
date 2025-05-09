@@ -10,11 +10,120 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/**
+ * @brief Raspberry Pi platform configuration
+ */
+typedef struct MCP_RPiConfig {
+    const char* deviceName;     // Maps to common.device_name
+    const char* version;        // Maps to common.firmware_version
+    bool enableDebug;           // Maps to common.debug_enabled
+    bool enablePersistence;     // Maps to common.enable_persistence
+    uint32_t heapSize;          // Maps to common.heap_size
+    const char* configFile;     // Maps to common.config_file_path
+    bool enableServer;          // Maps to common.server_enabled
+    uint16_t serverPort;        // Maps to common.server_port
+    bool autoStartServer;       // Maps to common.auto_start_server
+    bool enableI2C;             // Maps to common.interfaces.i2c.enabled
+    int i2cBusNumber;           // Maps to common.interfaces.i2c.bus_number
+    bool enableSPI;             // Maps to common.interfaces.spi.enabled
+    int spiBusNumber;           // Maps to common.interfaces.spi.bus_number
+    bool enableUART;            // Maps to common.interfaces.uart.enabled
+    int uartNumber;             // Maps to common.interfaces.uart.number
+    uint32_t uartBaudRate;      // Maps to common.interfaces.uart.baud_rate
+    bool enableGPIO;            // Maps to common.interfaces.gpio.enabled
+    bool enableWifi;            // Maps to common.network.enabled
+    const char* ssid;           // Maps to common.network.ssid
+    const char* password;       // Maps to common.network.password
+    bool enableBLE;             // Maps to common.network.ble.enabled
+    bool enableEthernet;        // Maps to common.network.ethernet.enabled
+    const char* ethernetInterface; // Maps to common.network.ethernet.interface
+    bool enableHotspot;         // Maps to common.network.ap.enabled
+    const char* hotspotSsid;    // Maps to common.network.ap.ssid
+    const char* hotspotPassword; // Maps to common.network.ap.password
+    uint16_t hotspotChannel;    // Maps to common.network.ap.channel
+    bool enableCamera;          // Maps to platform.rpi.enable_camera
+    int cameraResolution;       // Maps to platform.rpi.camera_resolution
+} MCP_RPiConfig;
+
 // Platform-specific MCP initialization
 int MCP_PlatformInit(void);
 
 // Platform-specific MCP deinitialization
 int MCP_PlatformDeinit(void);
+
+/**
+ * @brief Initialize the MCP system for Raspberry Pi platform
+ * 
+ * @param config Platform configuration (can be NULL for defaults)
+ * @return int 0 on success, negative error code on failure
+ */
+int MCP_SystemInit(const MCP_RPiConfig* config);
+
+/**
+ * @brief Start the MCP server
+ * 
+ * @return int 0 on success, negative error code on failure
+ */
+int MCP_ServerStart(void);
+
+/**
+ * @brief Load persistent state from storage
+ * 
+ * @return int 0 on success, negative error code on failure
+ */
+int MCP_LoadPersistentState(void);
+
+/**
+ * @brief Save persistent state to storage
+ * 
+ * @return int 0 on success, negative error code on failure
+ */
+int MCP_SavePersistentState(void);
+
+/**
+ * @brief Process system tasks
+ * 
+ * @param timeout_ms Maximum time to spend processing tasks (0 for no timeout)
+ * @return int Number of tasks processed or negative error code
+ */
+int MCP_SystemProcess(uint32_t timeout_ms);
+
+/**
+ * @brief Deinitialize the MCP system
+ * 
+ * @return int 0 on success, negative error code on failure
+ */
+int MCP_SystemDeinit(void);
+
+/**
+ * @brief Get system status as JSON
+ * 
+ * @param buffer Buffer to store JSON string
+ * @param bufferSize Size of buffer
+ * @return int Number of bytes written or negative error code
+ */
+int MCP_SystemGetStatus(char* buffer, size_t bufferSize);
+
+/**
+ * @brief Set debug output enable state
+ * 
+ * @param enable Enable debug output
+ * @return int Previous enable state
+ */
+int MCP_SystemSetDebug(bool enable);
+
+/**
+ * @brief Print debug message (if debug enabled)
+ * 
+ * @param format Printf-style format string
+ * @param ... Format arguments
+ */
+void MCP_SystemDebugPrint(const char* format, ...);
+
+/**
+ * @brief Restart the Raspberry Pi
+ */
+void MCP_Restart(void);
 
 // --- Memory management ---
 
@@ -283,6 +392,92 @@ size_t MCP_UARTRead(MCP_UARTHandle uart, uint8_t* data, size_t size, uint32_t ti
 // Check if UART has received data available
 int MCP_UARTAvailable(MCP_UARTHandle uart);
 
+// --- Sensor system operations ---
+
+// Initialize the sensor system
+int MCP_SensorSystemInit(void);
+
+// Register a sensor
+int MCP_SensorRegister(const char* id, const char* name, const char* type, int interface, int pin, const char* driver_id);
+
+// Unregister a sensor
+int MCP_SensorUnregister(const char* id);
+
+// Read a sensor value
+int MCP_SensorRead(const char* id, void* value, size_t size);
+
+// Enable or disable a sensor
+int MCP_SensorSetEnabled(const char* id, bool enabled);
+
+// Get sensor information
+int MCP_SensorGetInfo(const char* id, char* buffer, size_t size);
+
+// Get list of all sensors
+int MCP_SensorListAll(char* buffer, size_t size);
+
+// --- Network operations ---
+
+// WiFi connection status codes
+typedef enum {
+    MCP_WIFI_STATUS_DISCONNECTED = 0,
+    MCP_WIFI_STATUS_CONNECTING = 1,
+    MCP_WIFI_STATUS_CONNECTED = 2,
+    MCP_WIFI_STATUS_CONNECTION_FAILED = 3,
+    MCP_WIFI_STATUS_CONNECTION_LOST = 4
+} MCP_WiFiStatus;
+
+// Configure and connect to WiFi network
+int MCP_WiFiConnect(const char* ssid, const char* password, uint32_t timeout_ms);
+
+// Disconnect from WiFi network
+int MCP_WiFiDisconnect(void);
+
+// Get current WiFi status
+MCP_WiFiStatus MCP_WiFiGetStatus(void);
+
+// Get WiFi IP address as string
+int MCP_WiFiGetIP(char* buffer, size_t size);
+
+// Get WiFi SSID
+int MCP_WiFiGetSSID(char* buffer, size_t size);
+
+// Get WiFi signal strength (RSSI)
+int MCP_WiFiGetRSSI(void);
+
+// Start WiFi in AP (hotspot) mode
+int MCP_WiFiStartAP(const char* ssid, const char* password, uint16_t channel);
+
+// Stop WiFi AP mode
+int MCP_WiFiStopAP(void);
+
+// Check if WiFi hotspot is active
+bool MCP_WiFiIsAPActive(void);
+
+// Initialize BLE
+int MCP_BLEInit(const char* deviceName);
+
+// Start BLE advertising
+int MCP_BLEStartAdvertising(void);
+
+// Stop BLE advertising
+int MCP_BLEStopAdvertising(void);
+
+// Check if BLE is connected
+bool MCP_BLEIsConnected(void);
+
+// Configure Ethernet
+int MCP_EthernetConfigure(const char* interface, bool useDHCP, const char* staticIP, 
+                          const char* gateway, const char* subnet);
+
+// Get current Ethernet status
+int MCP_EthernetGetStatus(void);
+
+// Get Ethernet IP address as string
+int MCP_EthernetGetIP(char* buffer, size_t size);
+
+// Scan for available WiFi networks
+int MCP_WiFiScan(char* buffer, size_t size);
+
 // --- I2C operations ---
 
 // I2C handle type
@@ -416,5 +611,29 @@ int MCP_SystemGetMemoryInfo(uint32_t* total, uint32_t* free);
 
 // Get system information string
 const char* MCP_SystemGetInfo(void);
+
+/**
+ * @brief Set a configuration parameter by name
+ * 
+ * This function allows updating any configuration parameter by name through JSON.
+ * It supports all configuration parameters including WiFi, BLE, Ethernet, etc.
+ * 
+ * Example JSON: {"wifi": {"ssid": "NewNetwork", "password": "NewPassword", "enabled": true}}
+ * 
+ * @param json_config JSON string containing the configuration to update
+ * @return int 0 on success, negative error code on failure
+ */
+int MCP_SetConfiguration(const char* json_config);
+
+/**
+ * @brief Get the current configuration as JSON
+ * 
+ * This function returns the full configuration as a JSON string.
+ * 
+ * @param buffer Buffer to store the JSON string
+ * @param size Size of the buffer
+ * @return int Length of the JSON string or negative error code on failure
+ */
+int MCP_GetConfiguration(char* buffer, size_t size);
 
 #endif /* MCP_RPI_H */

@@ -1,11 +1,11 @@
 #include "driver_bridge.h"
 #include "driver_bytecode.h"
 #include "driver_manager.h"
-#include "../tool_system/bytecode_interpreter.h"
-#include "../tool_system/context_manager.h"
-#include "../tool_system/tool_registry.h"
-#include "../../driver/actuators/led/led.h"
-#include "../../driver/sensors/temperature/ds18b20.h"
+#include "bytecode_interpreter.h"
+#include "context_manager.h"
+#include "tool_registry.h"
+#include "led.h"
+#include "ds18b20.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,6 +50,10 @@ static BridgeDriverEntry* s_bridgeDrivers = NULL;
 static int s_maxBridgeDrivers = 0;
 static int s_bridgeDriverCount = 0;
 static bool s_initialized = false;
+
+// This is a simplified version of the problematic string for ESP32/Arduino
+// It doesn't use escaped backslashes which cause issues in the ESP32 compiler
+const char* kDriverBridgeGetStatusBytecode = "\"getStatus\":{\"instructions\":[{\"op\":\"PUSH_STR\",\"index\":0},{\"op\":\"HALT\"}],\"stringPool\":[\"{}\"]}";
 
 // Forward declarations for bytecode interface functions
 static int bridgeDriverInit(const void* config);
@@ -165,8 +169,10 @@ int MCP_DriverBridgeRegister(const char* id, const char* name,
                      "\"deinit\":{\"instructions\":[{\"op\":\"PUSH_NUM\",\"value\":0},{\"op\":\"HALT\"}]},"
                      "\"read\":{\"instructions\":[{\"op\":\"PUSH_STR\",\"index\":0},{\"op\":\"HALT\"}],\"stringPool\":[\"{}\"]},"
                      "\"write\":{\"instructions\":[{\"op\":\"PUSH_NUM\",\"value\":0},{\"op\":\"HALT\"}]},"
-                     "\"control\":{\"instructions\":[{\"op\":\"PUSH_NUM\",\"value\":0},{\"op\":\"HALT\"}]},"
-                     "\"getStatus\":{\"instructions\":[{\"op\":\"PUSH_STR\",\"index\":0},{\"op\":\"HALT\"}],\"stringPool\":[\"{\\\"status\\\":\\\"ready\\\"}\"]}");
+                     "\"control\":{\"instructions\":[{\"op\":\"PUSH_NUM\",\"value\":0},{\"op\":\"HALT\"}]},");
+    
+    // Use simplified version of the getStatus bytecode
+    offset += snprintf(driverJson + offset, sizeof(driverJson) - offset, "%s", kDriverBridgeGetStatusBytecode);
 
     // Add config schema if provided
     if (configSchema != NULL) {
@@ -359,12 +365,12 @@ static void* findMappedFunction(const char* driverId, const char* functionName) 
  */
 static int registerStandardBridgeFunctions(const char* id) {
     // Map the standard driver interface functions
-    MCP_DriverBridgeMapFunction(id, "init", bridgeDriverInit);
-    MCP_DriverBridgeMapFunction(id, "deinit", bridgeDriverDeinit);
-    MCP_DriverBridgeMapFunction(id, "read", bridgeDriverRead);
-    MCP_DriverBridgeMapFunction(id, "write", bridgeDriverWrite);
-    MCP_DriverBridgeMapFunction(id, "control", bridgeDriverControl);
-    MCP_DriverBridgeMapFunction(id, "getStatus", bridgeDriverGetStatus);
+    MCP_DriverBridgeMapFunction(id, "init", (void*)bridgeDriverInit);
+    MCP_DriverBridgeMapFunction(id, "deinit", (void*)bridgeDriverDeinit);
+    MCP_DriverBridgeMapFunction(id, "read", (void*)bridgeDriverRead);
+    MCP_DriverBridgeMapFunction(id, "write", (void*)bridgeDriverWrite);
+    MCP_DriverBridgeMapFunction(id, "control", (void*)bridgeDriverControl);
+    MCP_DriverBridgeMapFunction(id, "getStatus", (void*)bridgeDriverGetStatus);
 
     return 0;
 }
@@ -377,64 +383,64 @@ static int bridgeLEDDriver(const char* id, const char* name, int deviceType) {
     switch(deviceType) {
         case DEVICE_TYPE_LED_SIMPLE:
             // Map simple LED functions
-            MCP_DriverBridgeMapFunction(id, "init", LED_Init);
-            MCP_DriverBridgeMapFunction(id, "deinit", LED_Deinit);
-            MCP_DriverBridgeMapFunction(id, "on", LED_On);
-            MCP_DriverBridgeMapFunction(id, "off", LED_Off);
-            MCP_DriverBridgeMapFunction(id, "toggle", LED_Toggle);
-            MCP_DriverBridgeMapFunction(id, "setState", LED_SetState);
-            MCP_DriverBridgeMapFunction(id, "getState", LED_GetState);
+            MCP_DriverBridgeMapFunction(id, "init", (void*)LED_Init);
+            MCP_DriverBridgeMapFunction(id, "deinit", (void*)LED_Deinit);
+            MCP_DriverBridgeMapFunction(id, "on", (void*)LED_On);
+            MCP_DriverBridgeMapFunction(id, "off", (void*)LED_Off);
+            MCP_DriverBridgeMapFunction(id, "toggle", (void*)LED_Toggle);
+            MCP_DriverBridgeMapFunction(id, "setState", (void*)LED_SetState);
+            MCP_DriverBridgeMapFunction(id, "getState", (void*)LED_GetState);
             break;
 
         case DEVICE_TYPE_LED_PWM:
             // Map PWM LED functions (includes all simple LED functions)
-            MCP_DriverBridgeMapFunction(id, "init", LED_Init);
-            MCP_DriverBridgeMapFunction(id, "deinit", LED_Deinit);
-            MCP_DriverBridgeMapFunction(id, "on", LED_On);
-            MCP_DriverBridgeMapFunction(id, "off", LED_Off);
-            MCP_DriverBridgeMapFunction(id, "toggle", LED_Toggle);
-            MCP_DriverBridgeMapFunction(id, "setState", LED_SetState);
-            MCP_DriverBridgeMapFunction(id, "getState", LED_GetState);
-            MCP_DriverBridgeMapFunction(id, "setBrightness", LED_SetBrightness);
-            MCP_DriverBridgeMapFunction(id, "getBrightness", LED_GetBrightness);
+            MCP_DriverBridgeMapFunction(id, "init", (void*)LED_Init);
+            MCP_DriverBridgeMapFunction(id, "deinit", (void*)LED_Deinit);
+            MCP_DriverBridgeMapFunction(id, "on", (void*)LED_On);
+            MCP_DriverBridgeMapFunction(id, "off", (void*)LED_Off);
+            MCP_DriverBridgeMapFunction(id, "toggle", (void*)LED_Toggle);
+            MCP_DriverBridgeMapFunction(id, "setState", (void*)LED_SetState);
+            MCP_DriverBridgeMapFunction(id, "getState", (void*)LED_GetState);
+            MCP_DriverBridgeMapFunction(id, "setBrightness", (void*)LED_SetBrightness);
+            MCP_DriverBridgeMapFunction(id, "getBrightness", (void*)LED_GetBrightness);
             break;
 
         case DEVICE_TYPE_LED_RGB:
         case DEVICE_TYPE_LED_RGBW:
             // Map RGB/RGBW LED functions (includes simple + PWM + color functions)
-            MCP_DriverBridgeMapFunction(id, "init", LED_Init);
-            MCP_DriverBridgeMapFunction(id, "deinit", LED_Deinit);
-            MCP_DriverBridgeMapFunction(id, "on", LED_On);
-            MCP_DriverBridgeMapFunction(id, "off", LED_Off);
-            MCP_DriverBridgeMapFunction(id, "toggle", LED_Toggle);
-            MCP_DriverBridgeMapFunction(id, "setState", LED_SetState);
-            MCP_DriverBridgeMapFunction(id, "getState", LED_GetState);
-            MCP_DriverBridgeMapFunction(id, "setBrightness", LED_SetBrightness);
-            MCP_DriverBridgeMapFunction(id, "getBrightness", LED_GetBrightness);
-            MCP_DriverBridgeMapFunction(id, "setColor", LED_SetColor);
-            MCP_DriverBridgeMapFunction(id, "getColor", LED_GetColor);
-            MCP_DriverBridgeMapFunction(id, "setPattern", LED_SetPattern);
-            MCP_DriverBridgeMapFunction(id, "stopPattern", LED_StopPattern);
+            MCP_DriverBridgeMapFunction(id, "init", (void*)LED_Init);
+            MCP_DriverBridgeMapFunction(id, "deinit", (void*)LED_Deinit);
+            MCP_DriverBridgeMapFunction(id, "on", (void*)LED_On);
+            MCP_DriverBridgeMapFunction(id, "off", (void*)LED_Off);
+            MCP_DriverBridgeMapFunction(id, "toggle", (void*)LED_Toggle);
+            MCP_DriverBridgeMapFunction(id, "setState", (void*)LED_SetState);
+            MCP_DriverBridgeMapFunction(id, "getState", (void*)LED_GetState);
+            MCP_DriverBridgeMapFunction(id, "setBrightness", (void*)LED_SetBrightness);
+            MCP_DriverBridgeMapFunction(id, "getBrightness", (void*)LED_GetBrightness);
+            MCP_DriverBridgeMapFunction(id, "setColor", (void*)LED_SetColor);
+            MCP_DriverBridgeMapFunction(id, "getColor", (void*)LED_GetColor);
+            MCP_DriverBridgeMapFunction(id, "setPattern", (void*)LED_SetPattern);
+            MCP_DriverBridgeMapFunction(id, "stopPattern", (void*)LED_StopPattern);
             break;
 
         case DEVICE_TYPE_LED_ADDRESSABLE:
             // Map addressable LED functions (all of the above + pixel functions)
-            MCP_DriverBridgeMapFunction(id, "init", LED_Init);
-            MCP_DriverBridgeMapFunction(id, "deinit", LED_Deinit);
-            MCP_DriverBridgeMapFunction(id, "on", LED_On);
-            MCP_DriverBridgeMapFunction(id, "off", LED_Off);
-            MCP_DriverBridgeMapFunction(id, "toggle", LED_Toggle);
-            MCP_DriverBridgeMapFunction(id, "setState", LED_SetState);
-            MCP_DriverBridgeMapFunction(id, "getState", LED_GetState);
-            MCP_DriverBridgeMapFunction(id, "setBrightness", LED_SetBrightness);
-            MCP_DriverBridgeMapFunction(id, "getBrightness", LED_GetBrightness);
-            MCP_DriverBridgeMapFunction(id, "setColor", LED_SetColor);
-            MCP_DriverBridgeMapFunction(id, "getColor", LED_GetColor);
-            MCP_DriverBridgeMapFunction(id, "setPattern", LED_SetPattern);
-            MCP_DriverBridgeMapFunction(id, "stopPattern", LED_StopPattern);
-            MCP_DriverBridgeMapFunction(id, "setPixel", LED_SetPixel);
-            MCP_DriverBridgeMapFunction(id, "update", LED_Update);
-            MCP_DriverBridgeMapFunction(id, "fill", LED_Fill);
+            MCP_DriverBridgeMapFunction(id, "init", (void*)LED_Init);
+            MCP_DriverBridgeMapFunction(id, "deinit", (void*)LED_Deinit);
+            MCP_DriverBridgeMapFunction(id, "on", (void*)LED_On);
+            MCP_DriverBridgeMapFunction(id, "off", (void*)LED_Off);
+            MCP_DriverBridgeMapFunction(id, "toggle", (void*)LED_Toggle);
+            MCP_DriverBridgeMapFunction(id, "setState", (void*)LED_SetState);
+            MCP_DriverBridgeMapFunction(id, "getState", (void*)LED_GetState);
+            MCP_DriverBridgeMapFunction(id, "setBrightness", (void*)LED_SetBrightness);
+            MCP_DriverBridgeMapFunction(id, "getBrightness", (void*)LED_GetBrightness);
+            MCP_DriverBridgeMapFunction(id, "setColor", (void*)LED_SetColor);
+            MCP_DriverBridgeMapFunction(id, "getColor", (void*)LED_GetColor);
+            MCP_DriverBridgeMapFunction(id, "setPattern", (void*)LED_SetPattern);
+            MCP_DriverBridgeMapFunction(id, "stopPattern", (void*)LED_StopPattern);
+            MCP_DriverBridgeMapFunction(id, "setPixel", (void*)LED_SetPixel);
+            MCP_DriverBridgeMapFunction(id, "update", (void*)LED_Update);
+            MCP_DriverBridgeMapFunction(id, "fill", (void*)LED_Fill);
             break;
 
         default:
@@ -450,20 +456,20 @@ static int bridgeLEDDriver(const char* id, const char* name, int deviceType) {
  */
 static int bridgeDS18B20Driver(const char* id, const char* name) {
     // Map DS18B20 functions to bridge functions
-    MCP_DriverBridgeMapFunction(id, "init", DS18B20_Init);
-    MCP_DriverBridgeMapFunction(id, "deinit", DS18B20_Deinit);
-    MCP_DriverBridgeMapFunction(id, "startConversion", DS18B20_StartConversion);
-    MCP_DriverBridgeMapFunction(id, "readTemperature", DS18B20_ReadTemperature);
-    MCP_DriverBridgeMapFunction(id, "setResolution", DS18B20_SetResolution);
-    MCP_DriverBridgeMapFunction(id, "readPowerSupply", DS18B20_ReadPowerSupply);
-    MCP_DriverBridgeMapFunction(id, "getConversionTime", DS18B20_GetConversionTime);
-    MCP_DriverBridgeMapFunction(id, "scanDevices", DS18B20_ScanDevices);
-    MCP_DriverBridgeMapFunction(id, "selectDevice", DS18B20_SelectDevice);
-    MCP_DriverBridgeMapFunction(id, "readAddress", DS18B20_ReadAddress);
-    MCP_DriverBridgeMapFunction(id, "readScratchpad", DS18B20_ReadScratchpad);
-    MCP_DriverBridgeMapFunction(id, "writeScratchpad", DS18B20_WriteScratchpad);
-    MCP_DriverBridgeMapFunction(id, "copyScratchpad", DS18B20_CopyScratchpad);
-    MCP_DriverBridgeMapFunction(id, "recallEEPROM", DS18B20_RecallEEPROM);
+    MCP_DriverBridgeMapFunction(id, "init", (void*)DS18B20_Init);
+    MCP_DriverBridgeMapFunction(id, "deinit", (void*)DS18B20_Deinit);
+    MCP_DriverBridgeMapFunction(id, "startConversion", (void*)DS18B20_StartConversion);
+    MCP_DriverBridgeMapFunction(id, "readTemperature", (void*)DS18B20_ReadTemperature);
+    MCP_DriverBridgeMapFunction(id, "setResolution", (void*)DS18B20_SetResolution);
+    MCP_DriverBridgeMapFunction(id, "readPowerSupply", (void*)DS18B20_ReadPowerSupply);
+    MCP_DriverBridgeMapFunction(id, "getConversionTime", (void*)DS18B20_GetConversionTime);
+    MCP_DriverBridgeMapFunction(id, "scanDevices", (void*)DS18B20_ScanDevices);
+    MCP_DriverBridgeMapFunction(id, "selectDevice", (void*)DS18B20_SelectDevice);
+    MCP_DriverBridgeMapFunction(id, "readAddress", (void*)DS18B20_ReadAddress);
+    MCP_DriverBridgeMapFunction(id, "readScratchpad", (void*)DS18B20_ReadScratchpad);
+    MCP_DriverBridgeMapFunction(id, "writeScratchpad", (void*)DS18B20_WriteScratchpad);
+    MCP_DriverBridgeMapFunction(id, "copyScratchpad", (void*)DS18B20_CopyScratchpad);
+    MCP_DriverBridgeMapFunction(id, "recallEEPROM", (void*)DS18B20_RecallEEPROM);
 
     return 0;
 }
@@ -563,7 +569,7 @@ static int bridgeDriverRead(void* data, size_t maxSize, size_t* actualSize) {
             }
 
             // Format temperature as JSON
-            int written = snprintf(data, maxSize, "{\"value\":%.2f,\"units\":\"C\"}", temperature);
+            int written = snprintf((char*)data, maxSize, "{\"value\":%.2f,\"units\":\"C\"}", temperature);
             if (actualSize != NULL) {
                 *actualSize = written;
             }
@@ -823,12 +829,12 @@ static int bridgeDriverGetStatus(void* status, size_t maxSize) {
             // Start with basic status
             int offset = 0;
             char* statusStr = (char*)status;
-            offset += snprintf(statusStr + offset, maxSize - offset, "{\"deviceType\":\"LED\",");
+            offset += snprintf((char*)statusStr + offset, maxSize - offset, "{\"deviceType\":\"LED\",");
             
             // Add state if available
             if (getStateFunc != NULL) {
                 bool state = getStateFunc();
-                offset += snprintf(statusStr + offset, maxSize - offset, 
+                offset += snprintf((char*)statusStr + offset, maxSize - offset, 
                                  "\"state\":%s,", state ? "true" : "false");
             }
             
@@ -838,7 +844,7 @@ static int bridgeDriverGetStatus(void* status, size_t maxSize) {
                 (GetBrightnessFuncType)findMappedFunction(driverId, "getBrightness");
             if (getBrightnessFunc != NULL) {
                 uint8_t brightness = getBrightnessFunc();
-                offset += snprintf(statusStr + offset, maxSize - offset,
+                offset += snprintf((char*)statusStr + offset, maxSize - offset,
                                  "\"brightness\":%u,", brightness);
             }
             
@@ -851,15 +857,15 @@ static int bridgeDriverGetStatus(void* status, size_t maxSize) {
                 if (getColorFunc != NULL) {
                     RGBColor color;
                     if (getColorFunc(&color) == 0) {
-                        offset += snprintf(statusStr + offset, maxSize - offset,
+                        offset += snprintf((char*)statusStr + offset, maxSize - offset,
                                          "\"color\":{\"r\":%u,\"g\":%u,\"b\":%u",
                                          color.r, color.g, color.b);
                         
                         if (driver->deviceType == DEVICE_TYPE_LED_RGBW) {
-                            offset += snprintf(statusStr + offset, maxSize - offset,
+                            offset += snprintf((char*)statusStr + offset, maxSize - offset,
                                              ",\"w\":%u},", color.w);
                         } else {
-                            offset += snprintf(statusStr + offset, maxSize - offset, "},");
+                            offset += snprintf((char*)statusStr + offset, maxSize - offset, "},");
                         }
                     }
                 }
@@ -869,7 +875,7 @@ static int bridgeDriverGetStatus(void* status, size_t maxSize) {
             if (offset > 0 && statusStr[offset - 1] == ',') {
                 offset--;
             }
-            snprintf(statusStr + offset, maxSize - offset, "}");
+            snprintf((char*)statusStr + offset, maxSize - offset, "}");
             
             return 0;
         }
@@ -883,14 +889,14 @@ static int bridgeDriverGetStatus(void* status, size_t maxSize) {
             // Start with basic status
             int offset = 0;
             char* statusStr = (char*)status;
-            offset += snprintf(statusStr + offset, maxSize - offset, 
+            offset += snprintf((char*)statusStr + offset, maxSize - offset, 
                              "{\"deviceType\":\"DS18B20\",");
             
             // Add temperature if available
             if (readTempFunc != NULL) {
                 float temperature;
                 if (readTempFunc(&temperature) == 0) {
-                    offset += snprintf(statusStr + offset, maxSize - offset,
+                    offset += snprintf((char*)statusStr + offset, maxSize - offset,
                                      "\"temperature\":%.2f,\"units\":\"C\",", temperature);
                 }
             }
@@ -908,7 +914,7 @@ static int bridgeDriverGetStatus(void* status, size_t maxSize) {
                 else if (convTime <= 400) resolution = 11; // 11-bit
                 else resolution = 12; // 12-bit
                 
-                offset += snprintf(statusStr + offset, maxSize - offset,
+                offset += snprintf((char*)statusStr + offset, maxSize - offset,
                                  "\"resolution\":%u,", resolution);
             }
             
@@ -916,7 +922,7 @@ static int bridgeDriverGetStatus(void* status, size_t maxSize) {
             if (offset > 0 && statusStr[offset - 1] == ',') {
                 offset--;
             }
-            snprintf(statusStr + offset, maxSize - offset, "}");
+            snprintf((char*)statusStr + offset, maxSize - offset, "}");
             
             return 0;
         }
@@ -929,7 +935,7 @@ static int bridgeDriverGetStatus(void* status, size_t maxSize) {
     GetStatusFuncType getStatusFunc = (GetStatusFuncType)findMappedFunction(driverId, "getStatus");
     if (getStatusFunc == NULL) {
         // Default status if no function found
-        snprintf(status, maxSize, "{\"status\":\"unknown\"}");
+        snprintf((char*)status, maxSize, "{\"status\":\"unknown\"}");
         return 0;
     }
 

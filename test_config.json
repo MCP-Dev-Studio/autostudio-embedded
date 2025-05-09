@@ -1,0 +1,68 @@
+{
+  "device": {
+    "name": "Test Device",
+    "firmware_version": "1.0.0",
+    "debug_enabled": false
+  },
+  "server": {
+    "enabled": true,
+    "port": 9090,
+    "auto_start": true
+  },
+  "network": {
+    "wifi": {
+      "enabled": true,
+      "ssid": "TestNetwork",
+      "password": "TestPassword",
+      "auto_connect": false
+    },
+    "wifi_ap": {
+      "enabled": false,
+      "ssid": "",
+      "password": "",
+      "channel": 6
+    },
+    "ble": {
+      "enabled": false,
+      "device_name": "MCP Device",
+      "auto_advertise": false
+    },
+    "ethernet": {
+      "enabled": true,
+      "interface": "eth0",
+      "dhcp": true,
+      "static_ip": "",
+      "gateway": "",
+      "subnet": ""
+    }
+  },
+  "interfaces": {
+    "i2c": {
+      "enabled": false,
+      "bus_number": 1
+    },
+    "spi": {
+      "enabled": false,
+      "bus_number": 0
+    },
+    "uart": {
+      "enabled": false,
+      "number": 0,
+      "baud_rate": 115200
+    },
+    "gpio": {
+      "enabled": true
+    }
+  },
+  "system": {
+    "heap_size": 1048576,
+    "config_file_path": "./test_config.json",
+    "enable_persistence": true
+  },
+  "platform": {
+    "rpi": {
+      "enable_camera": true,
+      "camera_resolution": 1080
+    }
+  }
+}

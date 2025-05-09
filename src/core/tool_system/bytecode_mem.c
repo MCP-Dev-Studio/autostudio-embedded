@@ -5,19 +5,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-// Context structure (needed for the memory functions)
-typedef struct {
-    const MCP_BytecodeProgram* program;
-    MCP_BytecodeValue* stack;
-    uint16_t stackSize;
-    uint16_t stackPointer;
-    MCP_BytecodeValue* variables;
-    uint16_t pc; // Program counter
-    bool halt;
-    uint16_t errorCode;
-    char* errorMessage;
-} MCP_BytecodeContext;
-
 // Initialization flag
 static bool g_initialized = false;
 

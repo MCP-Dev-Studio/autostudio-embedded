@@ -14,7 +14,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
-#include "build_config.h"
+#include "../util/build_config.h"
 
 // Forward declarations for parser functions
 static JSONValue* parse_value(const char** json);

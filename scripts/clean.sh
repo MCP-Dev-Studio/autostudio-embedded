@@ -1,8 +1,8 @@
-#\!/bin/bash
+#!/bin/bash
 # MCP Embedded System Clean Script
 
 # Remove build directory
 echo "Cleaning build directory..."
 rm -rf build
 
-echo "Clean completed\!"
+echo "Clean completed!"

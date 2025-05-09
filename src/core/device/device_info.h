@@ -8,6 +8,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Device memory information
  */
@@ -208,5 +212,9 @@ int MCP_DeviceInfoSetCapabilities(const char* capabilities);
 #include "../tool_system/tool_registry.h"
 
 MCP_ToolResult MCP_DeviceInfoToolHandler(const char* json, size_t length);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DEVICE_INFO_H */

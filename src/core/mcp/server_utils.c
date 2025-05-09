@@ -83,7 +83,7 @@ uint32_t MCP_GetCurrentTimeMs(void) {
 #elif defined(MCP_OS_ARDUINO)
     return HAL_ArduinoMillis();
 #elif defined(MCP_OS_ESP32)
-    return HAL_ESP32GetMillis();
+    return HAL_ESP32Millis();
 #else
     // Default implementation
     struct timespec ts;

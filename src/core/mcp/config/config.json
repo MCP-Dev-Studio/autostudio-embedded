@@ -1,0 +1,83 @@
+{
+  "device": {
+    "name": "MCP Example Device",
+    "firmware_version": "1.2.0",
+    "debug_enabled": true
+  },
+  "server": {
+    "enabled": true,
+    "port": 8080,
+    "auto_start": true
+  },
+  "network": {
+    "wifi": {
+      "enabled": true,
+      "ssid": "YourNetworkSSID",
+      "password": "YourNetworkPassword",
+      "auto_connect": true
+    },
+    "wifi_ap": {
+      "enabled": false,
+      "ssid": "MCP-Device-AP",
+      "password": "mcp-access",
+      "channel": 6
+    },
+    "ble": {
+      "enabled": false,
+      "device_name": "MCP-BLE-Device",
+      "auto_advertise": false
+    },
+    "ethernet": {
+      "enabled": true,
+      "interface": "eth0",
+      "dhcp": true,
+      "static_ip": "192.168.1.100",
+      "gateway": "192.168.1.1",
+      "subnet": "255.255.255.0"
+    }
+  },
+  "interfaces": {
+    "i2c": {
+      "enabled": true,
+      "bus_number": 1
+    },
+    "spi": {
+      "enabled": true,
+      "bus_number": 0
+    },
+    "uart": {
+      "enabled": true,
+      "number": 0,
+      "baud_rate": 115200
+    },
+    "gpio": {
+      "enabled": true
+    }
+  },
+  "system": {
+    "heap_size": 1048576,
+    "config_file_path": "",
+    "enable_persistence": true
+  },
+  "platform": {
+    "rpi": {
+      "enable_camera": true,
+      "camera_resolution": 1080
+    },
+    "esp32": {
+      "enable_ota": true,
+      "enable_web_server": true,
+      "web_server_port": 80,
+      "enable_deep_sleep": false,
+      "deep_sleep_time_ms": 0
+    },
+    "arduino": {
+      "analog_reference": 0,
+      "enable_watchdog": true
+    },
+    "mbed": {
+      "enable_rtos": true,
+      "task_stack_size": 4096
+    }
+  }
+}

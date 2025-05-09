@@ -1,6 +1,8 @@
 #include "bytecode_config.h"
 #include "tool_registry.h"
+#include "tool_info.h"
 #include "../mcp/content.h"
+#include "../mcp/server_defs.h"
 #include "../../system/logging.h"
 #include <string.h>
 #include <stdlib.h>
@@ -27,6 +29,10 @@ static int handle_get_recommended(const char* sessionId, const char* operationId
                                 const MCP_Content* params, MCP_Content** result);
 static int handle_get_stats(const char* sessionId, const char* operationId, 
                           const MCP_Content* params, MCP_Content** result);
+                          
+// Tool invoke handler forward declaration
+static int bytecode_config_tool_invoke(const char* sessionId, const char* operationId, 
+                                    const MCP_Content* params);
 
 // Tool schema
 static const char* s_toolSchema = "{"
@@ -332,7 +338,7 @@ static int bytecode_config_tool_invoke(const char* sessionId, const char* operat
     }
     
     const char* action = NULL;
-    if (!MCP_ContentGetString(params, "action", &action) || action == NULL) {
+    if (!MCP_ContentGetStringField(params, "action", &action) || action == NULL) {
         // Send error: missing action
         MCP_Content* result = MCP_ContentCreateObject();
         MCP_ContentAddBoolean(result, "success", false);

@@ -62,25 +62,40 @@ This project implements the Model Context Protocol (MCP) server for embedded sys
 
 ### Prerequisites
 
-- CMake 3.10 or higher
-- C99 compatible compiler
-- C++11 compatible compiler (for C++ components)
+To build this project, you need the appropriate toolchain for your target platform:
 
-### Build Instructions
+- **Raspberry Pi**: Standard Linux build tools (gcc, make, cmake)
+- **ESP32**: ESP-IDF toolchain or Arduino CLI with ESP32 support
+- **Arduino**: Arduino CLI with appropriate board support packages
+- **Mbed**: Mbed CLI and the GNU Arm Embedded toolchain
+
+For detailed platform-specific setup instructions, prerequisites, and build processes, see the [Platform Guide](docs/PLATFORM_GUIDE.md).
+
+### Cross-Platform Build
+
+The project includes a build script that uses the appropriate native toolchain for each platform:
 
 ```bash
-# Create a build directory
-mkdir -p build && cd build
+# Build for ESP32 (default)
+./scripts/build.sh esp32
 
-# Configure the build
-cmake ..
+# Build for Raspberry Pi
+./scripts/build.sh rpi
 
-# Build the project
-cmake --build .
+# Build for Arduino
+./scripts/build.sh arduino
 
-# Run tests
-ctest
+# Build for Mbed
+./scripts/build.sh mbed
 ```
+
+This build script automatically:
+- Detects if the required platform-specific toolchain is installed
+- Sets up the appropriate project structure for the target platform
+- Configures and builds using the native build system for that platform
+- Falls back to a host-based build for testing if necessary
+
+For detailed platform-specific instructions, see the [Platform Guide](docs/PLATFORM_GUIDE.md).
 
 ## Configuration
 
@@ -213,7 +228,60 @@ The MCP server is designed to be portable across multiple embedded platforms:
 - MbedOS
 - Raspberry Pi
 
+### Platform-Specific Considerations
+
+#### Raspberry Pi
+
+- Builds using standard Linux tools (gcc, make, cmake)
+- Camera support through Pi Camera libraries
+- Full network stack support (WiFi, Ethernet, Bluetooth)
+- GPIO access through standard Linux interfaces
+- Native file system for configuration storage
+
+#### ESP32
+
+- Requires ESP-IDF toolchain for actual device deployment
+- OTA update support for field upgrades
+- Deep sleep power management features
+- Web server capabilities
+- NVS (Non-Volatile Storage) for configuration
+
+#### Arduino
+
+- Packaged as an Arduino library for integration with Arduino IDE/CLI
+- Limited resources require optimization of memory usage
+- Watchdog timer support for reliability
+- Platform-specific analog reference configuration
+- EEPROM or SD card for configuration storage
+
+#### Mbed
+
+- Built using Mbed CLI and the Mbed OS development environment
+- RTOS support for multi-threaded applications
+- Configurable task stack sizes
+- Hardware abstraction through Mbed HAL
+- Multiple storage options (SD, flash) for configuration
+
 ## Key Components
+
+### Configuration System
+
+The configuration system provides a cross-platform way to manage settings across all supported platforms:
+
+- **Unified Structure**: Common configuration fields shared across all platforms
+- **Platform Extensions**: Platform-specific configuration options
+- **JSON Support**: All settings configurable via JSON
+- **Persistent Storage**: Configurations saved to appropriate platform storage
+- **Runtime Updates**: Change configuration without recompiling
+
+Each platform implements the configuration system differently:
+
+- **Raspberry Pi**: JSON files in the filesystem
+- **ESP32**: NVS (Non-Volatile Storage)
+- **Arduino**: EEPROM or SD card
+- **Mbed**: FlashIAP or SD card
+
+To learn more, see the [MCP Configuration documentation](docs/MCP_CONFIGURATION.md).
 
 ### Device Information System
 
@@ -245,9 +313,10 @@ The persistent storage system provides a reliable way to store tool definitions 
 For detailed documentation, see the docs directory:
 
 - [MCP Server Implementation Requirements](docs/MCP%20Server%20Implementation%20Requirements%20for%20Embedded%20Systems.md)
-- [Driver Bridge System](docs/DRIVER_BRIDGE.md)
-- [Build Fixes](docs/BUILD_FIXES.md)
-- [Code Organization](docs/ORGANIZATION.md)
+- [Platform Guide](docs/PLATFORM_GUIDE.md) - Detailed setup and build instructions for each platform
+- [Driver Bridge System](docs/DRIVER_BRIDGE.md) - How drivers are bridged to the MCP system
+- [MCP Configuration](docs/MCP_CONFIGURATION.md) - Configuration system documentation
+- [Code Organization](docs/ORGANIZATION.md) - Structure and organization of the codebase
 
 ## License
 

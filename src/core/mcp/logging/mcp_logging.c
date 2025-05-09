@@ -1,12 +1,60 @@
 #include "mcp_logging.h"
+#include "../content.h"  // Include content.h which defines MCP_Content
 #include "../../../json/json_helpers.h"
 #include "../../../system/logging.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <time.h>
+
+// Add stub implementations for the host platform
+#if defined(MCP_PLATFORM_HOST)
+// Minimal MCP_Server structure for host platform testing
+struct MCP_Server {
+    char* deviceName;
+    char* version;
+    int sessionCount;
+    void* transport;
+};
+
+// Declare the server function to get rather than redefining
+struct MCP_Server* MCP_GetServer(void) {
+    static struct MCP_Server dummyServer;
+    dummyServer.deviceName = "Host Testing Device";
+    dummyServer.version = "1.0.0";
+    dummyServer.sessionCount = 0;
+    dummyServer.transport = NULL;
+    return &dummyServer;
+}
+
+// Don't redefine MCP_SendEventData, it's already defined in protocol_handler.h
+// Just implement a stub that matches the real prototype
+int __real_MCP_SendEventData(MCP_ServerTransport* transport, const char* sessionId, 
+                           const char* eventType, const MCP_Content* content) {
+    printf("[HOST] MCP_SendEventData called: %s\n", eventType);
+    return 0;
+}
+
+// This is a local helper function for our logging implementation
+static int mcp_local_send_event_data(void* transport, const char* sessionId, 
+                                    const char* eventType, MCP_Content* content) {
+    printf("[HOST] Local send event: %s\n", eventType);
+    return 0;
+}
+
+int MCP_ServerBroadcastEvent(struct MCP_Server* server, const char* eventType, MCP_Content* content) {
+    printf("[HOST] MCP_ServerBroadcastEvent called: %s\n", eventType);
+    return 0;
+}
+
+uint32_t MCP_GetCurrentTimeMs(void) {
+    return 0;
+}
+#endif
 
 // Static variables
-static MCP_Server* s_server = NULL;
+static struct MCP_Server* s_server = NULL;
 static LogLevel s_maxLevel = LOG_LEVEL_INFO;
 static bool s_enabled = false;
 static void (*s_originalLogCallback)(LogLevel level, const char* message) = NULL;
@@ -33,7 +81,7 @@ static int serialize_log_config(const MCP_LogConfig* config, MCP_Content* conten
 /**
  * @brief Initialize MCP logging bridge
  */
-int MCP_LoggingInit(MCP_Server* server, LogLevel maxLevel) {
+int MCP_LoggingInit(struct MCP_Server* server, LogLevel maxLevel) {
     if (server == NULL) {
         return -1;
     }
@@ -299,6 +347,7 @@ int MCP_LoggingHandleSubscription(const char* sessionId, const char* operationId
     // No specific handling needed here, just acknowledge subscription
     // The protocol handler will add this session to subscribers for the log event type
     
+#if !defined(MCP_PLATFORM_HOST)
     // Send a confirmation event and current configuration
     MCP_Content* content = MCP_ContentCreateObject();
     if (content == NULL) {
@@ -318,6 +367,10 @@ int MCP_LoggingHandleSubscription(const char* sessionId, const char* operationId
     );
     
     MCP_ContentFree(content);
+#else
+    // For host platform, just simulate a successful send
+    printf("[HOST] Handling subscription for: %s\n", sessionId);
+#endif
     
     // Also send current configuration
     return MCP_LoggingSendConfig(sessionId, operationId);
@@ -391,7 +444,12 @@ int MCP_LoggingHandleConfig(const char* sessionId, const char* operationId,
     }
     
     // Broadcast the configuration update to all subscribed clients
+    #if defined(MCP_PLATFORM_ARDUINO) || defined(MCP_OS_ARDUINO)
+    // For Arduino, use the other server event function
+    result = MCP_ServerSendEvent(MCP_EVENT_TYPE_LOG_CONFIG, (const uint8_t*)updatedContent->resultJson, strlen(updatedContent->resultJson));
+    #else
     result = MCP_ServerBroadcastEvent(s_server, MCP_EVENT_TYPE_LOG_CONFIG, updatedContent);
+    #endif
     
     MCP_ContentFree(updatedContent);
     return result;
@@ -401,6 +459,7 @@ int MCP_LoggingHandleConfig(const char* sessionId, const char* operationId,
  * @brief Send current log configuration to client
  */
 int MCP_LoggingSendConfig(const char* sessionId, const char* operationId) {
+#if !defined(MCP_PLATFORM_HOST)
     // Create content with current configuration
     MCP_Content* content = MCP_ContentCreateObject();
     if (content == NULL) {
@@ -447,6 +506,11 @@ int MCP_LoggingSendConfig(const char* sessionId, const char* operationId) {
     
     MCP_ContentFree(content);
     return result;
+#else
+    // For host platform, just simulate a successful send
+    printf("[HOST] Sending config to: %s\n", sessionId);
+    return 0;
+#endif
 }
 
 /**
@@ -520,7 +584,12 @@ static int mcp_send_log_event(LogLevel level, const char* module, const char* me
     MCP_ContentAddString(content, "levelName", log_level_name(level));
     MCP_ContentAddString(content, "module", module);
     MCP_ContentAddString(content, "message", message);
+    #if defined(MCP_PLATFORM_ARDUINO) || defined(MCP_OS_ARDUINO)
+    // For Arduino, use a simpler timestamp approach
+    MCP_ContentAddNumber(content, "timestamp", (double)time(NULL) * 1000);
+    #else
     MCP_ContentAddNumber(content, "timestamp", (double)MCP_GetCurrentTimeMs());
+    #endif
     
     // Add formatting flags
     MCP_ContentAddBoolean(content, "includeTimestamp", s_includeTimestamp);
@@ -528,7 +597,12 @@ static int mcp_send_log_event(LogLevel level, const char* module, const char* me
     MCP_ContentAddBoolean(content, "includeModuleName", s_includeModuleName);
     
     // Send to all subscribed sessions
+    #if defined(MCP_PLATFORM_ARDUINO) || defined(MCP_OS_ARDUINO)
+    // For Arduino, use the other server event function
+    int result = MCP_ServerSendEvent(MCP_EVENT_TYPE_LOG, (const uint8_t*)content->resultJson, strlen(content->resultJson));
+    #else
     int result = MCP_ServerBroadcastEvent(s_server, MCP_EVENT_TYPE_LOG, content);
+    #endif
     
     MCP_ContentFree(content);
     return result;

@@ -328,20 +328,20 @@ static char* variableToString(const MCP_Variable* variable) {
 }
 
 // Substitute variables in a template string
-char* MCP_ContextSubstituteVariables(MCP_ExecutionContext* context, const char* template) {
-    if (context == NULL || template == NULL) {
+char* MCP_ContextSubstituteVariables(MCP_ExecutionContext* context, const char* templateStr) {
+    if (context == NULL || templateStr == NULL) {
         return NULL;
     }
 
     // Initial allocation
-    size_t resultSize = strlen(template) * 2;  // Start with double the template size
+    size_t resultSize = strlen(templateStr) * 2;  // Start with double the template size
     char* result = (char*)malloc(resultSize);
     if (result == NULL) {
         return NULL;
     }
 
     size_t resultOffset = 0;
-    const char* current = template;
+    const char* current = templateStr;
 
     while (*current != '\0') {
         // Look for variable pattern start
@@ -477,12 +477,8 @@ int MCP_ContextStoreToolResult(MCP_ExecutionContext* context, const char* name, 
             // Store as string
             var.type = MCP_VAR_TYPE_STRING;
             var.value.stringValue = strdup(result->resultJson);
-        } else if (result->resultData != NULL) {
-            // Store as object
-            var.type = MCP_VAR_TYPE_OBJECT;
-            var.value.objectValue = result->resultData;
         } else {
-            // Empty result
+            // Empty result - resultData is not available in standard MCP_ToolResult
             var.type = MCP_VAR_TYPE_NULL;
         }
     } else {

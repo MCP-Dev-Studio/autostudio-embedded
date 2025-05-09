@@ -4,7 +4,7 @@
  */
 #include "device_info.h"
 #include "system/logging.h"
-#include "util/build_fix.h"
+#include "util/platform_compatibility.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -597,8 +597,12 @@ MCP_ToolResult MCP_DeviceInfoToolHandler(const char* json, size_t length) {
     MCP_ToolResult result;
     result.status = MCP_TOOL_RESULT_SUCCESS;
     result.resultJson = deviceInfoJson;
+    
+    #if defined(MCP_OS_ESP32) || defined(MCP_PLATFORM_ESP32)
+    // Only for ESP32 platforms that still use these fields
     result.resultData = NULL;
     result.resultDataSize = 0;
+    #endif
     
     return result;
 }

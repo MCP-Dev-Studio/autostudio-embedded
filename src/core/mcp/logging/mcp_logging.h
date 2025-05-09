@@ -4,9 +4,15 @@
 #include "../../kernel/event_system.h"
 #include "../protocol_handler.h"
 #include "../server.h"
+#include "../content.h"
 #include "../../../system/logging.h"
 #include <stdint.h>
 #include <stdbool.h>
+
+// Forward declare MCP_Server for host platform
+#if defined(MCP_PLATFORM_HOST)
+struct MCP_Server;
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +65,7 @@ typedef struct {
  * @param maxLevel Maximum log level to send (e.g., LOG_LEVEL_INFO)
  * @return int 0 on success, negative error code on failure
  */
-int MCP_LoggingInit(MCP_Server* server, LogLevel maxLevel);
+int MCP_LoggingInit(struct MCP_Server* server, LogLevel maxLevel);
 
 /**
  * @brief Deinitialize MCP logging bridge

@@ -406,7 +406,7 @@ To define a custom temperature sensor driver:
       "control": {
         "instructions": [
           {"op": "PUSH_VAR", "index": 0},
-          {"op": "PUSH_NUM", "value": 1},
+          {"op": "PUSH_NUM", "value": 1},[build.sh](../scripts/build.sh)
           {"op": "EQ"},
           {"op": "JUMP_IF_NOT", "address": 5},
           {"op": "PUSH_NUM", "value": 0},

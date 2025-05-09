@@ -78,7 +78,7 @@ int initializeTestEnvironment(void) {
     }
     
     // Register system.log tool
-    if (MCP_ToolRegister("system.log", logToolHandler, 
+    if (MCP_ToolRegister_Legacy("system.log", logToolHandler, 
                           "{\"properties\":{\"message\":{\"type\":\"string\"}}}") != 0) {
         printf("Failed to register system.log tool\n");
         return -2;
@@ -206,7 +206,7 @@ int testToolPersistence(void) {
     }
     
     // Register system.log tool again
-    if (MCP_ToolRegister("system.log", logToolHandler, 
+    if (MCP_ToolRegister_Legacy("system.log", logToolHandler, 
                           "{\"properties\":{\"message\":{\"type\":\"string\"}}}") != 0) {
         printf("Failed to register system.log tool\n");
         return -5;

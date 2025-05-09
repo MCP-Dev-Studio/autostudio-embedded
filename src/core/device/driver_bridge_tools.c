@@ -34,7 +34,7 @@ int MCP_DriverBridgeToolsInit(void) {
                                "}"
                                "}";
 
-    MCP_ToolRegister("system.registerNativeDriver", registerNativeDriverHandler, registerSchema);
+    MCP_ToolRegister_Legacy("system.registerNativeDriver", registerNativeDriverHandler, registerSchema);
 
     // Register system.unregisterNativeDriver tool
     const char* unregisterSchema = "{"
@@ -48,7 +48,7 @@ int MCP_DriverBridgeToolsInit(void) {
                                  "}"
                                  "}";
 
-    MCP_ToolRegister("system.unregisterNativeDriver", unregisterNativeDriverHandler, unregisterSchema);
+    MCP_ToolRegister_Legacy("system.unregisterNativeDriver", unregisterNativeDriverHandler, unregisterSchema);
 
     // Register system.listNativeDrivers tool
     const char* listSchema = "{"
@@ -61,7 +61,7 @@ int MCP_DriverBridgeToolsInit(void) {
                           "}"
                           "}";
 
-    MCP_ToolRegister("system.listNativeDrivers", listNativeDriversHandler, listSchema);
+    MCP_ToolRegister_Legacy("system.listNativeDrivers", listNativeDriversHandler, listSchema);
 
     // Register system.executeNativeDriverFunction tool
     const char* executeSchema = "{"
@@ -77,7 +77,7 @@ int MCP_DriverBridgeToolsInit(void) {
                               "}"
                               "}";
 
-    MCP_ToolRegister("system.executeNativeDriverFunction", executeNativeDriverFunctionHandler, executeSchema);
+    MCP_ToolRegister_Legacy("system.executeNativeDriverFunction", executeNativeDriverFunctionHandler, executeSchema);
 
     return 0;
 }
@@ -91,17 +91,17 @@ static MCP_ToolResult registerNativeDriverHandler(const char* json, size_t lengt
     }
 
     // Extract parameters
-    void* paramsObj = json_get_object_field(json, "params");
+    void* paramsObj = json_get_object_field((const char*)json, "params");
     if (paramsObj == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing params object");
     }
 
-    char* id = json_get_string_field(paramsObj, "id");
+    char* id = json_get_string_field((const char*)paramsObj, "id");
     if (id == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing driver ID");
     }
 
-    char* name = json_get_string_field(paramsObj, "name");
+    char* name = json_get_string_field((const char*)paramsObj, "name");
     // If name not provided, use ID as name
     if (name == NULL) {
         name = strdup(id);
@@ -112,13 +112,13 @@ static MCP_ToolResult registerNativeDriverHandler(const char* json, size_t lengt
     }
 
     // Get driver type (default to custom if not specified)
-    int type = json_get_int_field(paramsObj, "type", MCP_DRIVER_TYPE_CUSTOM);
+    int type = json_get_int_field((const char*)paramsObj, "type", MCP_DRIVER_TYPE_CUSTOM);
     if (type < 0 || type > MCP_DRIVER_TYPE_CUSTOM) {
         type = MCP_DRIVER_TYPE_CUSTOM; // Default to custom type if invalid
     }
 
     // Get device type (required)
-    int deviceType = json_get_int_field(paramsObj, "deviceType", -1);
+    int deviceType = json_get_int_field((const char*)paramsObj, "deviceType", -1);
     if (deviceType < 0) {
         free(id);
         free(name);
@@ -127,7 +127,7 @@ static MCP_ToolResult registerNativeDriverHandler(const char* json, size_t lengt
     }
 
     // Get config schema (optional)
-    char* configSchema = json_get_string_field(paramsObj, "configSchema");
+    char* configSchema = json_get_string_field((const char*)paramsObj, "configSchema");
 
     // Register driver with bridge
     int result = MCP_DriverBridgeRegister(id, name, (MCP_DriverType)type, deviceType, configSchema);
@@ -174,12 +174,12 @@ static MCP_ToolResult unregisterNativeDriverHandler(const char* json, size_t len
     }
 
     // Extract driver ID from params
-    void* paramsObj = json_get_object_field(json, "params");
+    void* paramsObj = json_get_object_field((const char*)json, "params");
     if (paramsObj == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing params object");
     }
 
-    char* id = json_get_string_field(paramsObj, "id");
+    char* id = json_get_string_field((const char*)paramsObj, "id");
     if (id == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing driver ID");
     }
@@ -253,23 +253,23 @@ static MCP_ToolResult executeNativeDriverFunctionHandler(const char* json, size_
     }
 
     // Extract parameters
-    void* paramsObj = json_get_object_field(json, "params");
+    void* paramsObj = json_get_object_field((const char*)json, "params");
     if (paramsObj == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing params object");
     }
 
-    char* id = json_get_string_field(paramsObj, "id");
+    char* id = json_get_string_field((const char*)paramsObj, "id");
     if (id == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing driver ID");
     }
 
-    char* function = json_get_string_field(paramsObj, "function");
+    char* function = json_get_string_field((const char*)paramsObj, "function");
     if (function == NULL) {
         free(id);
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing function name");
     }
 
-    char* args = json_get_string_field(paramsObj, "args");
+    char* args = json_get_string_field((const char*)paramsObj, "args");
     // args can be null if no arguments are needed
 
     // In a real implementation, this would find the mapped function and call it

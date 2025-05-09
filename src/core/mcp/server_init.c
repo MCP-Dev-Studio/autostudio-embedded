@@ -1,11 +1,14 @@
 #include "server.h"
 #include "auth_manager.h"
+#include <stdio.h>
+#include <stdbool.h>
+
+#if !defined(MCP_OS_HOST) && !defined(MCP_PLATFORM_HOST)
 #include "../device/driver_manager.h"
 #include "../device/driver_bytecode.h"
 #include "../device/driver_bridge.h"
 #include "../tool_system/tool_registry.h"
-#include <stdio.h>
-#include <stdbool.h>
+#endif
 
 /**
  * @brief Initialize the MCP server with configuration
@@ -18,6 +21,26 @@ int MCP_ServerInit(const MCP_ServerConfig* config) {
         return -1;
     }
     
+    #if defined(MCP_OS_HOST) || defined(MCP_PLATFORM_HOST)
+    // HOST platform implementation
+    printf("HOST: Initializing MCP server...\n");
+    
+    // Initialize authentication manager - start with completely open access
+    printf("HOST: Initializing authentication manager with open access...\n");
+    if (MCP_AuthManagerInit(true) != 0) {
+        printf("HOST: Failed to initialize authentication manager\n");
+        return -7;
+    }
+    
+    // On HOST platform, we skip initializing actual hardware-related components
+    // like USB, Ethernet, etc.
+    
+    printf("HOST: MCP server initialized successfully (HOST platform stub)\n");
+    printf("HOST: System is in open authentication mode - ALL OPERATIONS ENABLED WITHOUT SECURITY\n");
+    printf("HOST: Configure security later if needed using system.setAuth tool\n");
+    
+    #else
+    // Regular platform implementation
     printf("Initializing MCP server...\n");
     
     // Initialize tool registry
@@ -126,6 +149,8 @@ int MCP_ServerInit(const MCP_ServerConfig* config) {
     printf("MCP server initialized successfully\n");
     printf("System is in open authentication mode - ALL OPERATIONS ENABLED WITHOUT SECURITY\n");
     printf("Configure security later if needed using system.setAuth tool\n");
+    #endif
+    
     return 0;
 }
 

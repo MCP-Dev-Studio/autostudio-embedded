@@ -3,10 +3,13 @@
 #include "../../../json/json_helpers.h"
 #include "../../../system/logging.h"
 #include "../../tool_system/tool_registry.h"
+#include "../../tool_system/tool_info.h"
+#include "../server.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#if !defined(MCP_PLATFORM_HOST) && !defined(MCP_OS_HOST)
 // Tool schema in JSON format
 static const char* s_toolSchema = "{"
     "\"name\": \"mcp.logging\","
@@ -47,6 +50,13 @@ static const char* s_toolSchema = "{"
         "\"required\": [\"action\"]"
     "}"
 "}";
+#else
+// Simplified schema for host platform
+static const char* s_toolSchema = "{"
+    "\"name\": \"mcp.logging\","
+    "\"description\": \"Configure logging options for the MCP server\""
+"}";
+#endif
 
 // Forward declarations
 static int handle_get_config(const char* sessionId, const char* operationId, 
@@ -69,6 +79,128 @@ static int handle_enable_module_filter(const char* sessionId, const char* operat
                                    const MCP_Content* params, MCP_Content** result);
 static int handle_disable_module_filter(const char* sessionId, const char* operationId, 
                                     const MCP_Content* params, MCP_Content** result);
+
+#if defined(MCP_PLATFORM_HOST) || defined(MCP_OS_HOST)
+// Host platform implementation
+
+/**
+ * @brief Initialize logging tool (host implementation)
+ */
+int MCP_LoggingToolInit(void) {
+    printf("[HOST] MCP_LoggingToolInit called\n");
+    return 0;
+}
+
+/**
+ * @brief Deinitialize logging tool (host implementation)
+ */
+int MCP_LoggingToolDeinit(void) {
+    printf("[HOST] MCP_LoggingToolDeinit called\n");
+    return 0;
+}
+
+/**
+ * @brief Host implementation stub for tool invocation
+ * 
+ * This function is used by the HOST-specific implementation to handle tool invocations
+ * without dealing with potentially conflicting types.
+ */
+int MCP_LoggingToolInvokeHost(const char* sessionId, const char* operationId, void* params) {
+    printf("[HOST] MCP_LoggingToolInvokeHost called for session %s\n", sessionId);
+    printf("[HOST] Operation %s completed successfully (HOST platform stub)\n", operationId);
+    return 0;
+}
+
+/**
+ * @brief Register logging tool with the tool registry (host implementation)
+ */
+int MCP_LoggingToolRegister(void) {
+    printf("[HOST] MCP_LoggingToolRegister called\n");
+    printf("[HOST] Logging tool registered successfully\n");
+    return 0;
+}
+
+// MCP_LoggingToolInvoke function implementation will use the standard parameters signature
+// This ensures compatibility with the function declarations in the header file
+int MCP_LoggingToolInvoke(const char* sessionId, const char* operationId, const MCP_Content* params) {
+    printf("[HOST] MCP_LoggingToolInvoke called for session: %s, operation: %s\n", 
+            sessionId ? sessionId : "NULL", operationId ? operationId : "NULL");
+    // Just pass through to the host implementation with param as void*
+    return MCP_LoggingToolInvokeHost(sessionId, operationId, (void*)params);
+}
+
+// Host platform stubs for the handler functions
+static int handle_get_config(const char* sessionId, const char* operationId, 
+                          const MCP_Content* params, MCP_Content** result) {
+    printf("[HOST] handle_get_config called\n");
+    *result = MCP_ContentCreateObject();
+    return 0;
+}
+
+static int handle_set_config(const char* sessionId, const char* operationId, 
+                          const MCP_Content* params, MCP_Content** result) {
+    printf("[HOST] handle_set_config called\n");
+    *result = MCP_ContentCreateObject();
+    return 0;
+}
+
+static int handle_enable_logging(const char* sessionId, const char* operationId, 
+                             const MCP_Content* params, MCP_Content** result) {
+    printf("[HOST] handle_enable_logging called\n");
+    *result = MCP_ContentCreateObject();
+    return 0;
+}
+
+static int handle_disable_logging(const char* sessionId, const char* operationId, 
+                              const MCP_Content* params, MCP_Content** result) {
+    printf("[HOST] handle_disable_logging called\n");
+    *result = MCP_ContentCreateObject();
+    return 0;
+}
+
+static int handle_set_level(const char* sessionId, const char* operationId, 
+                         const MCP_Content* params, MCP_Content** result) {
+    printf("[HOST] handle_set_level called\n");
+    *result = MCP_ContentCreateObject();
+    return 0;
+}
+
+static int handle_add_module(const char* sessionId, const char* operationId, 
+                          const MCP_Content* params, MCP_Content** result) {
+    printf("[HOST] handle_add_module called\n");
+    *result = MCP_ContentCreateObject();
+    return 0;
+}
+
+static int handle_remove_module(const char* sessionId, const char* operationId, 
+                             const MCP_Content* params, MCP_Content** result) {
+    printf("[HOST] handle_remove_module called\n");
+    *result = MCP_ContentCreateObject();
+    return 0;
+}
+
+static int handle_clear_modules(const char* sessionId, const char* operationId, 
+                             const MCP_Content* params, MCP_Content** result) {
+    printf("[HOST] handle_clear_modules called\n");
+    *result = MCP_ContentCreateObject();
+    return 0;
+}
+
+static int handle_enable_module_filter(const char* sessionId, const char* operationId, 
+                                   const MCP_Content* params, MCP_Content** result) {
+    printf("[HOST] handle_enable_module_filter called\n");
+    *result = MCP_ContentCreateObject();
+    return 0;
+}
+
+static int handle_disable_module_filter(const char* sessionId, const char* operationId, 
+                                    const MCP_Content* params, MCP_Content** result) {
+    printf("[HOST] handle_disable_module_filter called\n");
+    *result = MCP_ContentCreateObject();
+    return 0;
+}
+
+#else /* Non-HOST platform implementation */
 
 /**
  * @brief Initialize logging tool
@@ -96,7 +228,7 @@ int MCP_LoggingToolInvoke(const char* sessionId, const char* operationId,
     }
     
     const char* action = NULL;
-    if (!MCP_ContentGetString(params, "action", &action) || action == NULL) {
+    if (!MCP_ContentGetStringField(params, "action", &action) || action == NULL) {
         // Send error: missing action
         MCP_Content* result = MCP_ContentCreateObject();
         MCP_ContentAddBoolean(result, "success", false);
@@ -398,7 +530,13 @@ static int handle_set_level(const char* sessionId, const char* operationId,
     
     // Get level from params
     const char* levelStr = NULL;
-    if (!MCP_ContentGetString(params, "level", &levelStr) || levelStr == NULL) {
+    #if defined(MCP_PLATFORM_ARDUINO) || defined(MCP_OS_ARDUINO)
+    if (!MCP_ContentGetStringValue(params, "level", &levelStr) || levelStr == NULL) {
+    #else
+    // Get level string from params using an alternative method for non-Arduino platforms
+    levelStr = MCP_ContentGetString(params);
+    if (levelStr == NULL) {
+    #endif
         MCP_ContentAddBoolean(*result, "success", false);
         MCP_ContentAddString(*result, "error", "Missing level parameter");
         return -2;
@@ -637,3 +775,4 @@ static int handle_disable_module_filter(const char* sessionId, const char* opera
     
     return 0;
 }
+#endif /* !MCP_PLATFORM_HOST && !MCP_OS_HOST */

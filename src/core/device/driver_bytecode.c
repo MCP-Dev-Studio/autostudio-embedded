@@ -115,7 +115,7 @@ int MCP_BytecodeDriverInit(void) {
                                    "}"
                                    "}";
 
-    MCP_ToolRegister("system.defineDriver", defineDriverBytecodeHandler, defineDriverSchema);
+    MCP_ToolRegister_Legacy("system.defineDriver", defineDriverBytecodeHandler, defineDriverSchema);
 
     // Register system.listDrivers tool
     const char* listDriversSchema = "{"
@@ -128,7 +128,7 @@ int MCP_BytecodeDriverInit(void) {
                                   "}"
                                   "}";
 
-    MCP_ToolRegister("system.listDrivers", listDriversBytecodeHandler, listDriversSchema);
+    MCP_ToolRegister_Legacy("system.listDrivers", listDriversBytecodeHandler, listDriversSchema);
 
     // Register system.removeDriver tool
     const char* removeDriverSchema = "{"
@@ -142,7 +142,7 @@ int MCP_BytecodeDriverInit(void) {
                                    "}"
                                    "}";
 
-    MCP_ToolRegister("system.removeDriver", removeDriverBytecodeHandler, removeDriverSchema);
+    MCP_ToolRegister_Legacy("system.removeDriver", removeDriverBytecodeHandler, removeDriverSchema);
 
     // Register system.executeDriverFunction tool
     const char* executeDriverFunctionSchema = "{"
@@ -158,7 +158,7 @@ int MCP_BytecodeDriverInit(void) {
                                             "}"
                                             "}";
 
-    MCP_ToolRegister("system.executeDriverFunction", executeDriverFunctionBytecodeHandler, executeDriverFunctionSchema);
+    MCP_ToolRegister_Legacy("system.executeDriverFunction", executeDriverFunctionBytecodeHandler, executeDriverFunctionSchema);
 
     // Load all persistent drivers
     MCP_BytecodeDriverLoadAll();
@@ -227,7 +227,7 @@ static BytecodeDriverDefinition* parseBytecodeDriver(const char* json, size_t le
     }
 
     // Extract params object from JSON
-    void* paramsJson = json_get_object_field(json, "params");
+    void* paramsJson = json_get_object_field((const char*)json, "params");
     if (paramsJson == NULL) {
         return NULL;
     }
@@ -239,25 +239,25 @@ static BytecodeDriverDefinition* parseBytecodeDriver(const char* json, size_t le
     }
 
     // Extract driver fields from JSON
-    char* id = json_get_string_field(paramsJson, "id");
+    char* id = json_get_string_field((const char*)paramsJson, "id");
     if (id == NULL) {
         free(driver);
         return NULL;
     }
     driver->id = id;
 
-    driver->name = json_get_string_field(paramsJson, "name");
-    driver->version = json_get_string_field(paramsJson, "version");
+    driver->name = json_get_string_field((const char*)paramsJson, "name");
+    driver->version = json_get_string_field((const char*)paramsJson, "version");
     
     // Get driver type
-    int type = json_get_int_field(paramsJson, "type", MCP_DRIVER_TYPE_CUSTOM);
+    int type = json_get_int_field((const char*)paramsJson, "type", MCP_DRIVER_TYPE_CUSTOM);
     if (type < 0 || type > MCP_DRIVER_TYPE_CUSTOM) {
         type = MCP_DRIVER_TYPE_CUSTOM; // Default to custom type if invalid
     }
     driver->type = (MCP_DriverType)type;
 
     // Extract bytecode programs
-    void* implObj = json_get_object_field(paramsJson, "implementation");
+    void* implObj = json_get_object_field((const char*)paramsJson, "implementation");
     if (implObj == NULL) {
         free(driver->id);
         free(driver->name);
@@ -267,22 +267,22 @@ static BytecodeDriverDefinition* parseBytecodeDriver(const char* json, size_t le
     }
 
     // Parse bytecode programs for each function
-    void* initObj = json_get_object_field(implObj, "init");
+    void* initObj = json_get_object_field((const char*)implObj, "init");
     driver->initProgram = parseBytecodeProgram(initObj);
 
-    void* deinitObj = json_get_object_field(implObj, "deinit");
+    void* deinitObj = json_get_object_field((const char*)implObj, "deinit");
     driver->deinitProgram = parseBytecodeProgram(deinitObj);
 
-    void* readObj = json_get_object_field(implObj, "read");
+    void* readObj = json_get_object_field((const char*)implObj, "read");
     driver->readProgram = parseBytecodeProgram(readObj);
 
-    void* writeObj = json_get_object_field(implObj, "write");
+    void* writeObj = json_get_object_field((const char*)implObj, "write");
     driver->writeProgram = parseBytecodeProgram(writeObj);
 
-    void* controlObj = json_get_object_field(implObj, "control");
+    void* controlObj = json_get_object_field((const char*)implObj, "control");
     driver->controlProgram = parseBytecodeProgram(controlObj);
 
-    void* getStatusObj = json_get_object_field(implObj, "getStatus");
+    void* getStatusObj = json_get_object_field((const char*)implObj, "getStatus");
     driver->getStatusProgram = parseBytecodeProgram(getStatusObj);
 
     // Ensure required programs exist
@@ -302,10 +302,10 @@ static BytecodeDriverDefinition* parseBytecodeDriver(const char* json, size_t le
     }
 
     // Get config schema
-    driver->configSchema = json_get_string_field(paramsJson, "configSchema");
+    driver->configSchema = json_get_string_field((const char*)paramsJson, "configSchema");
 
     // Get persistence flag
-    driver->persistent = json_get_bool_field(paramsJson, "persistent", false);
+    driver->persistent = json_get_bool_field((const char*)paramsJson, "persistent", false);
 
     return driver;
 }
@@ -818,7 +818,7 @@ static int bytecodeDriverGetStatus(void* status, size_t maxSize) {
 
     // Check if getStatus program exists
     if (driver->getStatusProgram == NULL) {
-        strncpy(status, "{\"status\":\"unknown\"}", maxSize);
+        strncpy((char*)status, "{\"status\":\"unknown\"}", maxSize);
         return 0;
     }
 
@@ -1087,9 +1087,9 @@ MCP_ToolResult listDriversBytecodeHandler(const char* json, size_t length) {
     // Extract optional filter from params
     const char* filterType = NULL;
     if (json != NULL && length > 0) {
-        void* paramsObj = json_get_object_field(json, "params");
+        void* paramsObj = json_get_object_field((const char*)json, "params");
         if (paramsObj != NULL) {
-            filterType = json_get_string_field(paramsObj, "type");
+            filterType = json_get_string_field((const char*)paramsObj, "type");
         }
     }
 
@@ -1195,12 +1195,12 @@ MCP_ToolResult removeDriverBytecodeHandler(const char* json, size_t length) {
     }
 
     // Extract driver ID from params
-    void* paramsObj = json_get_object_field(json, "params");
+    void* paramsObj = json_get_object_field((const char*)json, "params");
     if (paramsObj == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing params object");
     }
 
-    char* driverId = json_get_string_field(paramsObj, "id");
+    char* driverId = json_get_string_field((const char*)paramsObj, "id");
     if (driverId == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing driver ID");
     }
@@ -1235,24 +1235,24 @@ MCP_ToolResult executeDriverFunctionBytecodeHandler(const char* json, size_t len
     }
 
     // Extract parameters
-    void* paramsObj = json_get_object_field(json, "params");
+    void* paramsObj = json_get_object_field((const char*)json, "params");
     if (paramsObj == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing params object");
     }
 
-    char* driverId = json_get_string_field(paramsObj, "id");
+    char* driverId = json_get_string_field((const char*)paramsObj, "id");
     if (driverId == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing driver ID");
     }
 
-    char* funcName = json_get_string_field(paramsObj, "function");
+    char* funcName = json_get_string_field((const char*)paramsObj, "function");
     if (funcName == NULL) {
         free(driverId);
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing function name");
     }
 
     // Get function parameters (optional)
-    char* funcParams = json_get_string_field(paramsObj, "functionParams");
+    char* funcParams = json_get_string_field((const char*)paramsObj, "functionParams");
     size_t funcParamsLength = funcParams ? strlen(funcParams) : 0;
 
     // Execute function

@@ -4,6 +4,7 @@
 #include "../protocol_handler.h"
 #include "../server.h"
 #include "mcp_logging.h"
+#include "../../tool_system/tool_info.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -47,6 +48,21 @@ int MCP_LoggingToolInvoke(const char* sessionId, const char* operationId,
  * @return int 0 on success, negative error code on failure
  */
 int MCP_LoggingToolRegister(void);
+
+#if defined(MCP_OS_HOST) || defined(MCP_PLATFORM_HOST)
+/**
+ * @brief HOST-specific stub for tool invocation
+ * 
+ * This function is a simplified stub for the HOST platform to avoid
+ * dealing with complex or incomplete types.
+ * 
+ * @param sessionId Session ID
+ * @param operationId Operation ID
+ * @param params Tool parameters (void* to avoid type conflicts)
+ * @return int 0 on success, negative error code on failure
+ */
+int MCP_LoggingToolInvokeHost(const char* sessionId, const char* operationId, void* params);
+#endif
 
 #ifdef __cplusplus
 }

@@ -4,6 +4,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef MCP_PLATFORM_ARDUINO
+#include "platform_compatibility.h"
+#endif
+
 // Forward declaration of dependencies
 extern int persistent_storage_write(const char* key, const void* data, size_t size);
 extern int persistent_storage_read(const char* key, void* data, size_t maxSize, size_t* actualSize);
@@ -12,13 +16,22 @@ extern bool json_validate_schema(const char* json, const char* schema);
 extern bool json_get_bool_field(const char* json, const char* field, bool defaultValue);
 extern void* json_get_array_field(const char* json, const char* field);
 
+#ifndef MCP_PLATFORM_ARDUINO
+// Forward declarations of internal functions
+static void freeRuleTrigger(RuleTrigger* trigger);
+static void freeRuleAction(RuleAction* action);
+static void freeRule(AutomationRule* rule);
+static bool evaluateCondition(RuleTrigger* trigger, uint32_t currentTimeMs);
+static int executeAction(RuleAction* action);
+#endif
+
 // Trigger structure
 typedef struct {
     MCP_TriggerType type;
     union {
         struct {
             char* sensor;
-            MCP_ConditionOperator operator;
+            MCP_ConditionOperator op_type; // Changed from 'operator' to 'op_type' to avoid C++ reserved word
             union {
                 bool boolValue;
                 int32_t intValue;
@@ -105,8 +118,8 @@ static void freeRuleTrigger(RuleTrigger* trigger) {
     switch (trigger->type) {
         case MCP_TRIGGER_TYPE_CONDITION:
             free(trigger->config.condition.sensor);
-            if (trigger->config.condition.operator >= MCP_CONDITION_OP_CONTAINS && 
-                trigger->config.condition.operator <= MCP_CONDITION_OP_ENDS_WITH) {
+            if (trigger->config.condition.op_type >= MCP_CONDITION_OP_CONTAINS && 
+                trigger->config.condition.op_type <= MCP_CONDITION_OP_ENDS_WITH) {
                 free(trigger->config.condition.value.stringValue);
             }
             break;

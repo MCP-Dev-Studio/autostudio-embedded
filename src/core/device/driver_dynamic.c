@@ -120,7 +120,7 @@ int MCP_DynamicDriverInit(void) {
                                    "}"
                                    "}";
 
-    MCP_ToolRegister("system.defineDriver", defineDriverHandler, defineDriverSchema);
+    MCP_ToolRegister_Legacy("system.defineDriver", defineDriverHandler, defineDriverSchema);
 
     // Register system.listDrivers tool
     const char* listDriversSchema = "{"
@@ -133,7 +133,7 @@ int MCP_DynamicDriverInit(void) {
                                   "}"
                                   "}";
 
-    MCP_ToolRegister("system.listDrivers", listDriversHandler, listDriversSchema);
+    MCP_ToolRegister_Legacy("system.listDrivers", listDriversHandler, listDriversSchema);
 
     // Register system.removeDriver tool
     const char* removeDriverSchema = "{"
@@ -147,7 +147,7 @@ int MCP_DynamicDriverInit(void) {
                                    "}"
                                    "}";
 
-    MCP_ToolRegister("system.removeDriver", removeDriverHandler, removeDriverSchema);
+    MCP_ToolRegister_Legacy("system.removeDriver", removeDriverHandler, removeDriverSchema);
 
     // Register system.executeDriverFunction tool
     const char* executeDriverFunctionSchema = "{"
@@ -163,7 +163,7 @@ int MCP_DynamicDriverInit(void) {
                                             "}"
                                             "}";
 
-    MCP_ToolRegister("system.executeDriverFunction", executeDriverFunctionHandler, executeDriverFunctionSchema);
+    MCP_ToolRegister_Legacy("system.executeDriverFunction", executeDriverFunctionHandler, executeDriverFunctionSchema);
 
     // Load all persistent drivers
     MCP_DynamicDriverLoadAll();
@@ -178,7 +178,7 @@ static DynamicDriverDefinition* parseDynamicDriver(const char* json, size_t leng
     }
 
     // Extract params object from JSON
-    void* paramsJson = json_get_object_field(json, "params");
+    void* paramsJson = json_get_object_field((const char*)json, "params");
     if (paramsJson == NULL) {
         return NULL;
     }
@@ -190,25 +190,25 @@ static DynamicDriverDefinition* parseDynamicDriver(const char* json, size_t leng
     }
 
     // Extract driver fields from JSON
-    char* id = json_get_string_field(paramsJson, "id");
+    char* id = json_get_string_field((const char*)paramsJson, "id");
     if (id == NULL) {
         free(driver);
         return NULL;
     }
     driver->id = id;
 
-    driver->name = json_get_string_field(paramsJson, "name");
-    driver->version = json_get_string_field(paramsJson, "version");
+    driver->name = json_get_string_field((const char*)paramsJson, "name");
+    driver->version = json_get_string_field((const char*)paramsJson, "version");
     
     // Get driver type
-    int type = json_get_int_field(paramsJson, "type", MCP_DRIVER_TYPE_CUSTOM);
+    int type = json_get_int_field((const char*)paramsJson, "type", MCP_DRIVER_TYPE_CUSTOM);
     if (type < 0 || type > MCP_DRIVER_TYPE_CUSTOM) {
         type = MCP_DRIVER_TYPE_CUSTOM; // Default to custom type if invalid
     }
     driver->type = (MCP_DriverType)type;
 
     // Extract script implementation
-    void* implObj = json_get_object_field(paramsJson, "implementation");
+    void* implObj = json_get_object_field((const char*)paramsJson, "implementation");
     if (implObj == NULL) {
         free(driver->id);
         free(driver->name);
@@ -218,7 +218,7 @@ static DynamicDriverDefinition* parseDynamicDriver(const char* json, size_t leng
     }
 
     // Get script
-    driver->script = json_get_string_field(implObj, "script");
+    driver->script = json_get_string_field((const char*)implObj, "script");
     if (driver->script == NULL) {
         free(driver->id);
         free(driver->name);
@@ -229,10 +229,10 @@ static DynamicDriverDefinition* parseDynamicDriver(const char* json, size_t leng
     driver->scriptLength = strlen(driver->script);
 
     // Get config schema
-    driver->configSchema = json_get_string_field(paramsJson, "configSchema");
+    driver->configSchema = json_get_string_field((const char*)paramsJson, "configSchema");
 
     // Get persistence flag
-    driver->persistent = json_get_bool_field(paramsJson, "persistent", false);
+    driver->persistent = json_get_bool_field((const char*)paramsJson, "persistent", false);
 
     return driver;
 }
@@ -851,7 +851,7 @@ int MCP_DynamicDriverExecuteFunction(const char* driverId, const char* funcName,
     }
 
     // Call the function
-    return js_call_function(driver->id, funcName, actualParams, result, maxResultSize);
+    return js_call_function(driver->id, funcName, actualParams, (char*)result, maxResultSize);
 }
 
 // Forward declarations for tool handlers
@@ -899,9 +899,9 @@ MCP_ToolResult listDriversHandler(const char* json, size_t length) {
     // Extract optional filter from params
     const char* filterType = NULL;
     if (json != NULL && length > 0) {
-        void* paramsObj = json_get_object_field(json, "params");
+        void* paramsObj = json_get_object_field((const char*)json, "params");
         if (paramsObj != NULL) {
-            filterType = json_get_string_field(paramsObj, "type");
+            filterType = json_get_string_field((const char*)paramsObj, "type");
         }
     }
 
@@ -1004,12 +1004,12 @@ MCP_ToolResult removeDriverHandler(const char* json, size_t length) {
     }
 
     // Extract driver ID from params
-    void* paramsObj = json_get_object_field(json, "params");
+    void* paramsObj = json_get_object_field((const char*)json, "params");
     if (paramsObj == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing params object");
     }
 
-    char* driverId = json_get_string_field(paramsObj, "id");
+    char* driverId = json_get_string_field((const char*)paramsObj, "id");
     if (driverId == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing driver ID");
     }
@@ -1044,24 +1044,24 @@ MCP_ToolResult executeDriverFunctionHandler(const char* json, size_t length) {
     }
 
     // Extract parameters
-    void* paramsObj = json_get_object_field(json, "params");
+    void* paramsObj = json_get_object_field((const char*)json, "params");
     if (paramsObj == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing params object");
     }
 
-    char* driverId = json_get_string_field(paramsObj, "id");
+    char* driverId = json_get_string_field((const char*)paramsObj, "id");
     if (driverId == NULL) {
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing driver ID");
     }
 
-    char* funcName = json_get_string_field(paramsObj, "function");
+    char* funcName = json_get_string_field((const char*)paramsObj, "function");
     if (funcName == NULL) {
         free(driverId);
         return MCP_ToolCreateErrorResult(MCP_TOOL_RESULT_INVALID_PARAMETERS, "Missing function name");
     }
 
     // Get function parameters (optional)
-    char* funcParams = json_get_string_field(paramsObj, "functionParams");
+    char* funcParams = json_get_string_field((const char*)paramsObj, "functionParams");
     size_t funcParamsLength = funcParams ? strlen(funcParams) : 0;
 
     // Execute function
